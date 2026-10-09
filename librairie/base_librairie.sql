@@ -1,5 +1,5 @@
 -- ----------------------------------------------------------------------------
--- Base LIBRAIRIE : une chaîne de librairies imaginaire (données fictives)
+-- Base de la librairie : une chaîne de librairies inventée, toutes les données sont fictives
 -- ----------------------------------------------------------------------------
 
 DROP TABLE LIB_LIGNE_LIV CASCADE CONSTRAINTS;

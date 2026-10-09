@@ -1,34 +1,24 @@
 # Requêtes SQL
 
-Exercices SQL en syntaxe **Oracle**, sur deux bases imaginaires que j'ai créées. Toutes les données sont fictives.
+Mes exercices de SQL (syntaxe Oracle) pour le module de bases de données du BUT Informatique.
 
-| Thème | À lire | Base | Requêtes brutes |
-|---|---|---|---|
-| Rallye des Sables (rallye-raid) | [rallye/exercices.md](rallye/exercices.md) | [base_rallye.sql](rallye/base_rallye.sql) | [requetes_rallye.sql](rallye/requetes_rallye.sql) |
-| Librairie (clients, commandes, livraisons) | [librairie/exercices.md](librairie/exercices.md) | [base_librairie.sql](librairie/base_librairie.sql) | [requetes_librairie.sql](librairie/requetes_librairie.sql) |
+Pour m'entraîner, j'ai créé deux bases inventées de toutes pièces, et j'ai écrit dessus mes propres questions et leurs requêtes :
 
-Les pages `exercices.md` présentent chaque question puis sa requête dans un bloc de code coloré, avec le nombre de lignes qu'elle renvoie. Les fichiers `.sql` contiennent les mêmes requêtes, prêtes à exécuter.
+- **[Rallye des Sables](rallye/exercices.md)** : un rallye-raid avec des pilotes, des écuries, des étapes, des chronos et des abandons. 67 exercices.
+- **[Librairie](librairie/exercices.md)** : des clients, des boutiques, des livres, des commandes et des livraisons. 44 exercices.
 
-## Notions travaillées
+Chaque page donne la question, la requête et le nombre de lignes qu'elle renvoie. J'ai classé les exercices dans l'ordre du cours : projection, jointures, opérateurs ensemblistes, vues, sous-requêtes, fonctions, `group by`, puis des requêtes plus poussées (`rollup`, fonctions analytiques, `connect by`) et les mises à jour.
 
-Les exercices sont rangés dans le même ordre que le cours :
+## Les essayer
 
-1. Projection et restriction (`WHERE`, `LIKE`, `BETWEEN`, `IN`, `IS NULL`)
-2. Jointures : internes, externes, auto-jointures, écriture SQL1 / `ON` / `USING`
-3. Opérateurs ensemblistes (`UNION`, `INTERSECT`, `MINUS`)
-4. Vues
-5. Sous-requêtes, `ALL`, `EXISTS`, requêtes synchronisées
-6. Expressions et fonctions (`DECODE`, `CASE`, `NVL`, dates, chaînes)
-7. Regroupements (`GROUP BY`, `HAVING`, `ROLLUP`, fonctions analytiques)
-8. Requêtes avancées (requête hiérarchique `CONNECT BY`) et mises à jour (`INSERT`, `UPDATE`, `DELETE`)
+Dans chaque dossier il y a :
 
-## Utilisation
+- `base_*.sql` : crée les tables et les remplit. Je le lance en script dans SQL Developer (F5). La première fois, les `drop table` du début plantent parce que les tables n'existent pas encore : c'est normal.
+- `requetes_*.sql` : toutes les requêtes, à lancer une par une (Ctrl+Entrée).
+- `exercices.md` : la même chose en plus lisible.
 
-1. Dans SQL Developer, exécuter le fichier `base_*.sql` en script (F5). Au premier lancement, les `DROP TABLE` en tête échouent parce que les tables n'existent pas encore : c'est normal.
-2. Ouvrir le fichier `requetes_*.sql` et exécuter les requêtes une par une (Ctrl+Entrée).
+## Remarques
 
-## Vérification
-
-Toutes les requêtes ont été exécutées sur une copie PostgreSQL des deux bases, et les nombres de lignes indiqués viennent de cette exécution. Certaines requêtes sont propres à Oracle (`DECODE`, `ROWNUM`, `CONNECT BY`, `DUMP`, `MAX(COUNT(*))`) : pour celles-là, c'est leur équivalent PostgreSQL qui a été testé.
-
-Ce travail a été réalisé avec l'aide d'une IA (Claude), qui a servi à concevoir les bases fictives, rédiger et mettre en forme les requêtes, et les exécuter pour les vérifier.
+- Toutes les données sont fictives.
+- J'ai testé les requêtes sur une copie PostgreSQL des bases. Pour les quelques requêtes propres à Oracle (`decode`, `rownum`, `connect by`, `dump`, `max(count(*))`), c'est leur équivalent PostgreSQL qui a tourné.
+- Je me suis fait aider par une IA (Claude) pour créer les bases, mettre les requêtes au propre et les vérifier.

@@ -1,1640 +1,1636 @@
-# Rallye des Sables : 67 exercices SQL
+# Rallye des Sables
 
-Le Rallye des Sables est un rallye-raid imaginaire (éditions 1988, 1998, 2005 et 2016 à 2025, étapes au Maroc et en Espagne). Base : [`base_rallye.sql`](base_rallye.sql). Version brute des requêtes : [`requetes_rallye.sql`](requetes_rallye.sql).
+Pour m'entraîner en SQL, j'ai inventé un rallye-raid : le Rallye des Sables, avec des éditions en 1988, 1998, 2005 puis chaque année de 2016 à 2025. Il y a des pilotes, des écuries qui changent de sponsor au fil des années, des étapes au Maroc et en Espagne, des chronos et des abandons. Tout est fictif.
 
-| Table | Contenu |
-|---|---|
-| `ral_pilote`, `ral_nationalite` | pilotes et leur(s) pays |
-| `ral_ecurie`, `ral_sponsor`, `ral_ecurie_succede` | écuries, noms successifs (sponsors) et filiations |
-| `ral_edition`, `ral_engagement_ecurie`, `ral_engagement` | éditions, écuries et pilotes engagés chaque année |
-| `ral_etape`, `ral_type_etape` | étapes (année, n°, suffixe) et leur type |
-| `ral_chrono`, `ral_penalite` | temps de chaque pilote par étape, pénalités |
-| `ral_abandon`, `ral_type_abandon` | abandons et leurs motifs |
-| `ral_manager`, `ral_pays`, `ral_pays_succede`, `ral_classement_mondial` | managers, pays, classement mondial des écuries |
+Pour chaque exercice, je mets la question, ma requête (syntaxe Oracle) et le nombre de lignes que j'obtiens. Les requêtes seules sont dans [requetes_rallye.sql](requetes_rallye.sql), et la base à créer avant de les lancer dans [base_rallye.sql](base_rallye.sql).
+
+Les tables :
+
+- `ral_pilote` et `ral_nationalite` : les pilotes et leur pays
+- `ral_ecurie`, `ral_sponsor` et `ral_ecurie_succede` : les écuries, les noms qu'elles ont portés et quelle écurie a remplacé laquelle
+- `ral_edition`, `ral_engagement_ecurie` et `ral_engagement` : les éditions, puis qui était engagé chaque année
+- `ral_etape` et `ral_type_etape` : les étapes (une étape = année + numéro + suffixe)
+- `ral_chrono` et `ral_penalite` : le temps de chaque pilote sur chaque étape, et les pénalités
+- `ral_abandon` et `ral_type_abandon` : les abandons et leurs raisons
+- `ral_manager`, `ral_pays`, `ral_pays_succede` et `ral_classement_mondial` : le reste
 
 ## 1. Projection et restriction
 
-### Question 1
+### Exercice 1
 
-Lister les étapes numérotées de 5 à 10, toutes éditions confondues. Afficher le n° d'étape, la ville de départ, la ville d'arrivée et les km.
-
-```sql
-SELECT n_etape, ville_depart, ville_arrivee, km
-FROM   ral_etape
-WHERE  n_etape BETWEEN 5 AND 10
-ORDER BY annee, n_etape;
-```
-
-*Résultat : 11 lignes*
-
-### Question 2
-
-Même liste, uniquement pour l'édition 2025.
+Les étapes numérotées de 5 à 10, toutes années confondues, avec le numéro, la ville de départ, la ville d'arrivée et les km.
 
 ```sql
-SELECT n_etape, ville_depart, ville_arrivee, km
-FROM   ral_etape
-WHERE  n_etape BETWEEN 5 AND 10
-  AND  annee = 2025
-ORDER BY n_etape;
+select n_etape, ville_depart, ville_arrivee, km
+from ral_etape
+where n_etape between 5 and 10
+order by annee, n_etape;
 ```
 
-*Résultat : 6 lignes*
+→ 11 lignes
 
-### Question 3
+### Exercice 2
 
-Étapes de l'édition 2025 dont le numéro est inférieur à 5 ou supérieur à 10 (deux solutions).
-
-Solution 1 : OR
+Pareil mais seulement pour 2025.
 
 ```sql
-SELECT n_etape, ville_depart, ville_arrivee, km
-FROM   ral_etape
-WHERE  (n_etape < 5 OR n_etape > 10)
-  AND  annee = 2025
-ORDER BY n_etape;
+select n_etape, ville_depart, ville_arrivee, km
+from ral_etape
+where n_etape between 5 and 10
+and annee = 2025
+order by n_etape;
 ```
 
-*Résultat : 15 lignes*
+→ 6 lignes
 
-Solution 2 : NOT BETWEEN
+### Exercice 3
+
+Les étapes de 2025 avant la 5 ou après la 10 (je l'ai fait de deux façons).
+
+avec un or (attention aux parenthèses, sinon le and ne s'applique qu'à la 2e condition)
 
 ```sql
-SELECT n_etape, ville_depart, ville_arrivee, km
-FROM   ral_etape
-WHERE  n_etape NOT BETWEEN 5 AND 10
-  AND  annee = 2025
-ORDER BY n_etape;
+select n_etape, ville_depart, ville_arrivee, km
+from ral_etape
+where (n_etape < 5 or n_etape > 10)
+and annee = 2025
+order by n_etape;
 ```
 
-*Résultat : 15 lignes*
+→ 15 lignes
 
-### Question 4
-
-Lister tous les prologues (type 'PRL') : pays et villes de départ et d'arrivée, km, vitesse moyenne, année et type. Du plus court au plus long.
+avec not between
 
 ```sql
-SELECT pays_depart,
-       pays_arrivee,
-       ville_depart,
-       ville_arrivee,
-       km,
-       vitesse_moy,
-       annee,
-       code_type
-FROM   ral_etape
-WHERE  code_type = 'PRL'
-ORDER BY km;
+select n_etape, ville_depart, ville_arrivee, km
+from ral_etape
+where n_etape not between 5 and 10
+and annee = 2025
+order by n_etape;
 ```
 
-*Résultat : 2 lignes*
+→ 15 lignes
 
-### Question 5
+### Exercice 4
 
-En une seule requête, lister les étapes dont la ville de départ :
-
-- commence par 'M'
-- ou se termine par 'A'
-- ou contient 'OU'
+Tous les prologues (type PRL) avec les pays et villes de départ/arrivée, les km, la vitesse moyenne, l'année et le type. Du plus court au plus long.
 
 ```sql
-SELECT *
-FROM   ral_etape
-WHERE  ville_depart LIKE 'M%'
-   OR  ville_depart LIKE '%A'
-   OR  ville_depart LIKE '%OU%'
-ORDER BY annee, n_etape;
+select pays_depart, pays_arrivee, ville_depart, ville_arrivee,
+       km, vitesse_moy, annee, code_type
+from ral_etape
+where code_type = 'PRL'
+order by km;
 ```
 
-*Résultat : 26 lignes*
+→ 2 lignes
 
-### Question 6
+### Exercice 5
 
-Quelle étape a été courue le 14 juillet 2025 ?
+En une seule requête, les étapes dont la ville de départ :
+
+- commence par M
+- ou finit par A
+- ou contient OU
 
 ```sql
-SELECT *
-FROM   ral_etape
-WHERE  date_etape = TO_DATE('14/07/2025', 'DD/MM/YYYY');
+select *
+from ral_etape
+where ville_depart like 'M%'
+or ville_depart like '%A'
+or ville_depart like '%OU%'
+order by annee, n_etape;
 ```
 
-*Résultat : 1 ligne*
+→ 26 lignes
 
-### Question 7
+### Exercice 6
 
-Pilotes qui ont fait leurs débuts sur le rallye en 2025 : prénom, nom et âge à leurs débuts, du plus jeune au plus âgé.
+L'étape qui a eu lieu le 14 juillet 2025.
 
 ```sql
-SELECT prenom,
-       nom,
-       annee_debut - annee_naissance AS age
-FROM   ral_pilote
-WHERE  annee_debut = 2025
-ORDER BY age;
+select *
+from ral_etape
+where date_etape = to_date('14/07/2025', 'DD/MM/YYYY');
 ```
 
-*Résultat : 4 lignes*
+→ 1 ligne
 
-### Question 8
+### Exercice 7
 
-Sponsors apparus après 1990 qui n'ont pas de sigle.
+Les pilotes qui ont débuté en 2025 : prénom, nom et l'âge qu'ils avaient, du plus jeune au plus vieux.
 
 ```sql
-SELECT *
-FROM   ral_sponsor
-WHERE  sigle IS NULL
-  AND  annee_sponsor > 1990;
+select prenom, nom, annee_debut - annee_naissance as age
+from ral_pilote
+where annee_debut = 2025
+order by age;
 ```
 
-*Résultat : 8 lignes*
+→ 4 lignes
 
-### Question 9
+### Exercice 8
 
-Pilotes dont le nom commence par 'M', triés par prénom (A à Z) puis par nom (Z à A).
+Les sponsors arrivés après 1990 qui n'ont pas de sigle.
 
 ```sql
-SELECT *
-FROM   ral_pilote
-WHERE  nom LIKE 'M%'
-ORDER BY prenom ASC, nom DESC;
+select *
+from ral_sponsor
+where sigle is null
+and annee_sponsor > 1990;
 ```
 
-*Résultat : 6 lignes*
+→ 8 lignes
 
-### Question 10
+### Exercice 9
 
-Lignes de ral_nationalite pour les pays SUI, JPN et POL.
+Les pilotes dont le nom commence par M, triés par prénom (A -> Z) puis par nom (Z -> A).
 
 ```sql
-SELECT *
-FROM   ral_nationalite
-WHERE  code_pays IN ('SUI', 'JPN', 'POL');
+select *
+from ral_pilote
+where nom like 'M%'
+order by prenom asc, nom desc;
 ```
 
-*Résultat : 5 lignes*
+→ 6 lignes
+
+### Exercice 10
+
+Dans ral_nationalite, les lignes des pays SUI, JPN et POL.
+
+```sql
+select *
+from ral_nationalite
+where code_pays in ('SUI', 'JPN', 'POL');
+```
+
+→ 5 lignes
 
 ## 2. Jointures
 
-### Question 11
+### Exercice 11
 
-Pilotes engagés en 2025 : nom, prénom, n° de voiture, n° d'écurie et n° de pilote. Écrire la jointure de trois façons.
+Les pilotes engagés en 2025 : nom, prénom, n° de voiture, n° d'écurie et n° de pilote. J'écris la jointure de 3 manières.
 
-Méthode 1 : jointure dans le WHERE (SQL1)
-
-```sql
-SELECT p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote
-FROM   ral_pilote p, ral_engagement e
-WHERE  p.n_pilote = e.n_pilote
-  AND  e.annee = 2025
-ORDER BY e.n_voiture;
-```
-
-*Résultat : 24 lignes*
-
-Méthode 2 : JOIN ... ON
+1re manière : l'ancienne écriture, la jointure dans le where
 
 ```sql
-SELECT p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote
-FROM   ral_pilote p
-JOIN   ral_engagement e ON e.n_pilote = p.n_pilote
-WHERE  e.annee = 2025
-ORDER BY e.n_voiture;
+select p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote
+from ral_pilote p, ral_engagement e
+where p.n_pilote = e.n_pilote
+and e.annee = 2025
+order by e.n_voiture;
 ```
 
-*Résultat : 24 lignes*
+→ 24 lignes
 
-Méthode 3 : JOIN ... USING
+2e manière : join ... on
 
 ```sql
-SELECT nom, prenom, n_voiture, n_ecurie, n_pilote
-FROM   ral_pilote
-JOIN   ral_engagement USING (n_pilote)
-WHERE  annee = 2025
-ORDER BY n_voiture;
+select p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+where e.annee = 2025
+order by e.n_voiture;
 ```
 
-*Résultat : 24 lignes*
+→ 24 lignes
 
-### Question 11bis
-
-Même requête, limitée aux voitures n° 1 à 9. Expliquer le nombre de lignes.
+3e manière : join ... using (pas d'alias devant n_pilote du coup)
 
 ```sql
-SELECT p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote
-FROM   ral_pilote p
-JOIN   ral_engagement e ON e.n_pilote = p.n_pilote
-WHERE  e.annee = 2025
-  AND  e.n_voiture BETWEEN 1 AND 9
-ORDER BY e.n_voiture;
+select nom, prenom, n_voiture, n_ecurie, n_pilote
+from ral_pilote
+join ral_engagement using (n_pilote)
+where annee = 2025
+order by n_voiture;
 ```
 
-*Résultat : 4 lignes*
+→ 24 lignes
 
-Les numéros vont par dizaine : 1 à 4 pour la 1re écurie, 11 à 14 pour la 2e, etc. Entre 1 et 9, on ne trouve donc que les 4 pilotes de la première écurie.
+### Exercice 11bis
 
-### Question 11ter
-
-Même requête, avec en plus le nom du sponsor.
+Même chose mais seulement pour les voitures 1 à 9. Pourquoi ce nombre de lignes ?
 
 ```sql
-SELECT p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote, s.nom AS sponsor
-FROM   ral_pilote p
-JOIN   ral_engagement e ON e.n_pilote = p.n_pilote
-JOIN   ral_sponsor s    ON s.n_ecurie = e.n_ecurie AND s.n_sponsor = e.n_sponsor
-WHERE  e.annee = 2025
-  AND  e.n_voiture BETWEEN 1 AND 9
-ORDER BY e.n_voiture;
+select p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+where e.annee = 2025
+and e.n_voiture between 1 and 9
+order by e.n_voiture;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-La jointure avec le sponsor se fait sur toute sa clé (n_ecurie, n_sponsor). Avec n_ecurie seul, on aurait une ligne par sponsor qu'a connu l'écurie.
+Les numéros de voiture vont par dizaine (1 à 4 pour la 1re écurie, 11 à 14 pour la 2e...). Entre 1 et 9 il n'y a donc que les 4 pilotes de la première écurie.
 
-### Question 12
+### Exercice 11ter
 
-Pilotes dont la voiture porte un n° entre 28 et 49 et dont le nom contient 'ZI' ou 'IZ' : nom, prénom, écurie, sponsor et année, triés par année.
+Pareil avec le nom du sponsor en plus.
 
 ```sql
-SELECT p.nom, p.prenom, e.n_ecurie, e.n_sponsor, e.annee
-FROM   ral_pilote p
-JOIN   ral_engagement e ON e.n_pilote = p.n_pilote
-WHERE  e.n_voiture BETWEEN 28 AND 49
-  AND  (p.nom LIKE '%ZI%' OR p.nom LIKE '%IZ%')
-ORDER BY e.annee;
+select p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote, s.nom as sponsor
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+join ral_sponsor s on s.n_ecurie = e.n_ecurie and s.n_sponsor = e.n_sponsor
+where e.annee = 2025
+and e.n_voiture between 1 and 9
+order by e.n_voiture;
 ```
 
-*Résultat : 7 lignes*
+→ 4 lignes
 
-### Question 13
+Il faut joindre sur n_ecurie ET n_sponsor. Avec seulement n_ecurie, j'avais une ligne pour chaque sponsor que l'écurie a eu dans son histoire.
 
-Pilotes « espoirs » (25 ans ou moins) de l'édition 2025 : nom, prénom, n° de sponsor et n° d'écurie, triés par nom.
+### Exercice 12
+
+Les pilotes qui ont eu une voiture entre 28 et 49 et dont le nom contient ZI ou IZ : nom, prénom, écurie, sponsor et année, trié par année.
 
 ```sql
-SELECT p.nom, p.prenom, e.n_sponsor, e.n_ecurie
-FROM   ral_pilote p
-JOIN   ral_engagement e ON e.n_pilote = p.n_pilote
-WHERE  e.annee = 2025
-  AND  e.espoir = 'o'
-ORDER BY p.nom;
+select p.nom, p.prenom, e.n_ecurie, e.n_sponsor, e.annee
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+where e.n_voiture between 28 and 49
+and (p.nom like '%ZI%' or p.nom like '%IZ%')
+order by e.annee;
 ```
 
-*Résultat : 7 lignes*
+→ 7 lignes
 
-### Question 13bis
+### Exercice 13
 
-Mêmes pilotes avec le nom de leur sponsor, triés par sponsor puis par nom.
+Les espoirs (25 ans ou moins) de 2025 : nom, prénom, n° de sponsor et d'écurie, triés par nom.
 
 ```sql
-SELECT p.nom, p.prenom, s.nom AS sponsor
-FROM   ral_pilote p
-JOIN   ral_engagement e ON e.n_pilote = p.n_pilote
-JOIN   ral_sponsor s    ON s.n_ecurie = e.n_ecurie AND s.n_sponsor = e.n_sponsor
-WHERE  e.annee = 2025
-  AND  e.espoir = 'o'
-ORDER BY s.nom, p.nom;
+select p.nom, p.prenom, e.n_sponsor, e.n_ecurie
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+where e.annee = 2025
+and e.espoir = 'o'
+order by p.nom;
 ```
 
-*Résultat : 7 lignes*
+→ 7 lignes
 
-### Question 14
+### Exercice 13bis
 
-Tous les pilotes de 2025 (prénom, nom) avec, pour ceux qui ont abandonné, le motif de l'abandon. Les pilotes arrivés au bout doivent aussi apparaître.
+Les mêmes avec le nom de leur sponsor, triés par sponsor puis par nom.
 
 ```sql
-SELECT p.prenom, p.nom, a.code_abandon, t.libelle
-FROM   ral_pilote p
-JOIN   ral_engagement e        ON e.n_pilote = p.n_pilote
-LEFT JOIN ral_abandon a        ON a.n_pilote = e.n_pilote AND a.annee = e.annee
-LEFT JOIN ral_type_abandon t   ON t.code_abandon = a.code_abandon
-WHERE  e.annee = 2025
-ORDER BY p.nom, p.prenom;
+select p.nom, p.prenom, s.nom as sponsor
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+join ral_sponsor s on s.n_ecurie = e.n_ecurie and s.n_sponsor = e.n_sponsor
+where e.annee = 2025
+and e.espoir = 'o'
+order by s.nom, p.nom;
 ```
 
-*Résultat : 24 lignes*
+→ 7 lignes
 
-Le filtre sur l'année porte sur e.annee. Avec "a.annee = 2025" dans le WHERE, les pilotes sans abandon (a.annee vaut null) disparaîtraient.
+### Exercice 14
 
-### Question 15
-
-Pilotes qui ont un homonyme (même nom de famille), triés par nom et prénom.
+Tous les pilotes de 2025 et, pour ceux qui ont abandonné, la raison. Ceux qui sont allés au bout doivent apparaître aussi.
 
 ```sql
-SELECT DISTINCT p1.nom, p1.prenom
-FROM   ral_pilote p1
-JOIN   ral_pilote p2 ON p2.nom = p1.nom
-WHERE  p1.n_pilote <> p2.n_pilote
-ORDER BY p1.nom, p1.prenom;
+select p.prenom, p.nom, a.code_abandon, t.libelle
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+left join ral_abandon a on a.n_pilote = e.n_pilote and a.annee = e.annee
+left join ral_type_abandon t on t.code_abandon = a.code_abandon
+where e.annee = 2025
+order by p.nom, p.prenom;
 ```
 
-*Résultat : 3 lignes*
+→ 24 lignes
 
-### Question 16
+Je filtre sur e.annee et pas sur a.annee : avec a.annee = 2025 dans le where, les pilotes sans abandon (a.annee est null pour eux) disparaissent.
 
-Étapes arrivant dans une ville qui a accueilli plusieurs arrivées : n° d'étape, suffixe, ville de départ, ville d'arrivée et année.
+### Exercice 15
+
+Les pilotes qui ont un homonyme (même nom de famille).
 
 ```sql
-SELECT DISTINCT e1.n_etape, e1.suffixe, e1.ville_depart, e1.ville_arrivee, e1.annee
-FROM   ral_etape e1
-JOIN   ral_etape e2 ON e2.ville_arrivee = e1.ville_arrivee
-WHERE  e1.annee   <> e2.annee
-   OR  e1.n_etape <> e2.n_etape
-   OR  e1.suffixe <> e2.suffixe
-ORDER BY e1.ville_arrivee, e1.annee, e1.n_etape;
+select distinct p1.nom, p1.prenom
+from ral_pilote p1
+join ral_pilote p2 on p2.nom = p1.nom
+where p1.n_pilote <> p2.n_pilote
+order by p1.nom, p1.prenom;
 ```
 
-*Résultat : 29 lignes*
+→ 3 lignes
 
-Une étape est identifiée par (annee, n_etape, suffixe) : il suffit qu'une des trois colonnes diffère pour ne pas comparer une étape avec elle-même.
+### Exercice 16
 
-### Question 16bis
-
-Même question sans afficher l'année. Pourquoi obtient-on moins de lignes ?
+Les étapes qui arrivent dans une ville où il y a eu plusieurs arrivées : n° d'étape, suffixe, départ, arrivée et année.
 
 ```sql
-SELECT DISTINCT e1.n_etape, e1.suffixe, e1.ville_depart, e1.ville_arrivee
-FROM   ral_etape e1
-JOIN   ral_etape e2 ON e2.ville_arrivee = e1.ville_arrivee
-WHERE  e1.annee   <> e2.annee
-   OR  e1.n_etape <> e2.n_etape
-   OR  e1.suffixe <> e2.suffixe
-ORDER BY e1.ville_arrivee, e1.n_etape;
+select distinct e1.n_etape, e1.suffixe, e1.ville_depart, e1.ville_arrivee, e1.annee
+from ral_etape e1
+join ral_etape e2 on e2.ville_arrivee = e1.ville_arrivee
+where e1.annee <> e2.annee
+or e1.n_etape <> e2.n_etape
+or e1.suffixe <> e2.suffixe
+order by e1.ville_arrivee, e1.annee, e1.n_etape;
 ```
 
-*Résultat : 28 lignes*
+→ 29 lignes
 
-L'étape 5 ERFOUD -> MARRAKECH existe en 1998 et en 2017. Sans l'année, les deux lignes deviennent identiques et le DISTINCT n'en garde qu'une.
+Une étape c'est (annee, n_etape, suffixe). Il suffit qu'une des 3 colonnes change pour être sûr que je ne compare pas l'étape avec elle-même.
 
-### Question 17
+### Exercice 16bis
 
-Tous les motifs d'abandon, y compris ceux qui n'ont jamais servi. Afficher le code venant de ral_abandon, celui venant de ral_type_abandon et le libellé. Ne pas utiliser USING.
+Même chose sans l'année. Pourquoi j'ai une ligne en moins ?
 
 ```sql
-SELECT a.code_abandon AS code_abandon,
-       t.code_abandon AS code_type,
-       t.libelle
-FROM   ral_abandon a
-RIGHT JOIN ral_type_abandon t ON t.code_abandon = a.code_abandon
-ORDER BY t.code_abandon;
+select distinct e1.n_etape, e1.suffixe, e1.ville_depart, e1.ville_arrivee
+from ral_etape e1
+join ral_etape e2 on e2.ville_arrivee = e1.ville_arrivee
+where e1.annee <> e2.annee
+or e1.n_etape <> e2.n_etape
+or e1.suffixe <> e2.suffixe
+order by e1.ville_arrivee, e1.n_etape;
 ```
 
-*Résultat : 18 lignes*
+→ 28 lignes
 
-### Question 18
+L'étape 5 ERFOUD -> MARRAKECH existe en 1998 et en 2017. Sans l'année les deux lignes sont identiques, donc le distinct en enlève une.
 
-Pilotes des écuries SAFRAN DUNES TEAM, ATLAS RALLY et SIERRA RALLY TEAM qui ont abandonné en 2025 : nom, prénom, motif, écurie et ses trois managers.
+### Exercice 17
+
+Tous les motifs d'abandon, même ceux qui n'ont jamais servi. J'affiche le code de ral_abandon, celui de ral_type_abandon et le libellé (sans using).
 
 ```sql
-SELECT p.nom        AS pilote,
-       p.prenom,
-       a.code_abandon,
-       s.nom        AS ecurie,
-       m1.nom       AS manager_1,
-       m2.nom       AS manager_2,
-       m3.nom       AS manager_3
-FROM   ral_abandon a
-JOIN   ral_pilote p             ON p.n_pilote = a.n_pilote
-JOIN   ral_engagement e         ON e.n_pilote = a.n_pilote AND e.annee = a.annee
-JOIN   ral_sponsor s            ON s.n_ecurie = e.n_ecurie AND s.n_sponsor = e.n_sponsor
-JOIN   ral_engagement_ecurie ee ON ee.annee = e.annee AND ee.n_ecurie = e.n_ecurie AND ee.n_sponsor = e.n_sponsor
-JOIN   ral_manager m1           ON m1.n_manager = ee.n_manager1
-LEFT JOIN ral_manager m2        ON m2.n_manager = ee.n_manager2
-LEFT JOIN ral_manager m3        ON m3.n_manager = ee.n_manager3
-WHERE  a.annee = 2025
-  AND  s.nom IN ('SAFRAN DUNES TEAM', 'ATLAS RALLY', 'SIERRA RALLY TEAM')
-ORDER BY s.nom, p.nom;
+select a.code_abandon as code_abandon, t.code_abandon as code_type, t.libelle
+from ral_abandon a
+right join ral_type_abandon t on t.code_abandon = a.code_abandon
+order by t.code_abandon;
 ```
 
-*Résultat : 3 lignes*
+→ 18 lignes
 
-Jointures externes pour les managers 2 et 3 : une écurie peut ne pas en avoir.
+### Exercice 18
+
+Les pilotes de SAFRAN DUNES TEAM, ATLAS RALLY et SIERRA RALLY TEAM qui ont abandonné en 2025, avec la raison, l'écurie et ses managers.
+
+```sql
+select p.nom as pilote, p.prenom, a.code_abandon, s.nom as ecurie,
+       m1.nom as manager_1, m2.nom as manager_2, m3.nom as manager_3
+from ral_abandon a
+join ral_pilote p on p.n_pilote = a.n_pilote
+join ral_engagement e on e.n_pilote = a.n_pilote and e.annee = a.annee
+join ral_sponsor s on s.n_ecurie = e.n_ecurie and s.n_sponsor = e.n_sponsor
+join ral_engagement_ecurie ee on ee.annee = e.annee and ee.n_ecurie = e.n_ecurie and ee.n_sponsor = e.n_sponsor
+join ral_manager m1 on m1.n_manager = ee.n_manager1
+left join ral_manager m2 on m2.n_manager = ee.n_manager2
+left join ral_manager m3 on m3.n_manager = ee.n_manager3
+where a.annee = 2025
+and s.nom in ('SAFRAN DUNES TEAM', 'ATLAS RALLY', 'SIERRA RALLY TEAM')
+order by s.nom, p.nom;
+```
+
+→ 3 lignes
+
+left join pour les managers 2 et 3 parce que certaines écuries n'en ont qu'un.
 
 ## 3. Opérateurs ensemblistes
 
-### Question 19
+### Exercice 19
 
-Motifs d'abandon qui n'ont jamais été utilisés.
+Les motifs d'abandon qui n'ont jamais été utilisés.
 
 ```sql
-SELECT code_abandon FROM ral_type_abandon
-MINUS
-SELECT code_abandon FROM ral_abandon;
+select code_abandon from ral_type_abandon
+minus
+select code_abandon from ral_abandon;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-### Question 19bis
+### Exercice 19bis
 
-Même question en affichant aussi le libellé.
+Pareil avec le libellé.
 
 ```sql
-SELECT code_abandon, libelle
-FROM   ral_type_abandon
-MINUS
-SELECT a.code_abandon, t.libelle
-FROM   ral_abandon a
-JOIN   ral_type_abandon t ON t.code_abandon = a.code_abandon;
+select code_abandon, libelle
+from ral_type_abandon
+minus
+select a.code_abandon, t.libelle
+from ral_abandon a
+join ral_type_abandon t on t.code_abandon = a.code_abandon;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-### Question 20
+### Exercice 20
 
-Villes qui ont été à la fois ville de départ et ville d'arrivée.
+Les villes qui ont été à la fois ville de départ et ville d'arrivée.
 
 ```sql
-SELECT ville_depart AS ville FROM ral_etape
-INTERSECT
-SELECT ville_arrivee FROM ral_etape;
+select ville_depart as ville from ral_etape
+intersect
+select ville_arrivee from ral_etape;
 ```
 
-*Résultat : 24 lignes*
+→ 24 lignes
 
-### Question 21
+### Exercice 21
 
-Numéros des pilotes qui ont terminé l'édition 2025.
+Les numéros des pilotes qui ont fini l'édition 2025.
 
 ```sql
-SELECT n_pilote FROM ral_engagement WHERE annee = 2025
-MINUS
-SELECT n_pilote FROM ral_abandon WHERE annee = 2025;
+select n_pilote from ral_engagement where annee = 2025
+minus
+select n_pilote from ral_abandon where annee = 2025;
 ```
 
-*Résultat : 18 lignes*
+→ 18 lignes
 
-### Question 22
+### Exercice 22
 
-Numéros des pilotes engagés à toutes les éditions depuis 2016 (les dix dernières).
+Les pilotes qui ont participé à toutes les éditions depuis 2016 (les 10 dernières).
 
-Solution ensembliste : on retire les pilotes à qui il manque au moins une édition.
-
-```sql
-SELECT n_pilote
-FROM   ral_engagement
-WHERE  annee > 2015
-MINUS
-SELECT n_pilote
-FROM   (
-         SELECT e.n_pilote, ed.annee
-         FROM   ral_engagement e, ral_edition ed
-         WHERE  e.annee  > 2015
-           AND  ed.annee > 2015
-         MINUS
-         SELECT n_pilote, annee
-         FROM   ral_engagement
-       );
-```
-
-*Résultat : 6 lignes*
-
-Solution avec regroupement (partie 6)
+version avec les ensembles : je prends tous les pilotes et j'enlève ceux à qui il manque au moins une année
 
 ```sql
-SELECT n_pilote
-FROM   ral_engagement
-WHERE  annee > 2015
-GROUP BY n_pilote
-HAVING COUNT(*) = (SELECT COUNT(*) FROM ral_edition WHERE annee > 2015);
-```
-
-*Résultat : 6 lignes*
-
-### Question 23
-
-Écuries (n° d'écurie et de sponsor) classées dans le top 10 mondial mais jamais engagées sur le rallye, plus celles classées au-delà de la 20e place qui y ont été engagées. Utiliser ral_classement_mondial.
-
-```sql
+select n_pilote
+from ral_engagement
+where annee > 2015
+minus
+select n_pilote
+from
 (
-  SELECT n_ecurie, n_sponsor FROM ral_classement_mondial WHERE rang_mondial <= 10
-  MINUS
-  SELECT n_ecurie, n_sponsor FROM ral_engagement_ecurie
-)
-UNION
-(
-  SELECT n_ecurie, n_sponsor FROM ral_classement_mondial WHERE rang_mondial > 20
-  INTERSECT
-  SELECT n_ecurie, n_sponsor FROM ral_engagement_ecurie
+  select e.n_pilote, ed.annee
+  from ral_engagement e, ral_edition ed
+  where e.annee > 2015
+  and ed.annee > 2015
+  minus
+  select n_pilote, annee
+  from ral_engagement
 );
 ```
 
-*Résultat : 8 lignes*
+→ 6 lignes
 
-### Question 24
-
-Étapes 8 à 12 de l'édition 2025 : afficher les km et la vitesse moyenne dans la même colonne, sur deux lignes. Colonnes : n° d'étape, départ, arrivée, "mesure" ('km' ou 'vitesse') et "valeur".
+version avec group by (plus simple quand on a vu la partie 7)
 
 ```sql
-SELECT n_etape, ville_depart, ville_arrivee, 'km' AS mesure, km AS valeur
-FROM   ral_etape
-WHERE  annee = 2025
-  AND  n_etape BETWEEN 8 AND 12
-UNION
-SELECT n_etape, ville_depart, ville_arrivee, 'vitesse', vitesse_moy
-FROM   ral_etape
-WHERE  annee = 2025
-  AND  n_etape BETWEEN 8 AND 12
-ORDER BY 1, 4;
+select n_pilote
+from ral_engagement
+where annee > 2015
+group by n_pilote
+having count(*) = (select count(*) from ral_edition where annee > 2015);
 ```
 
-*Résultat : 10 lignes*
+→ 6 lignes
+
+### Exercice 23
+
+Les écuries (n° écurie + n° sponsor) qui sont dans le top 10 mondial mais qui n'ont jamais couru le rallye, et celles classées après la 20e place qui l'ont couru.
+
+je fais les deux morceaux séparément puis je les colle avec un union
+
+```sql
+(
+  select n_ecurie, n_sponsor from ral_classement_mondial where rang_mondial <= 10
+  minus
+  select n_ecurie, n_sponsor from ral_engagement_ecurie
+)
+union
+(
+  select n_ecurie, n_sponsor from ral_classement_mondial where rang_mondial > 20
+  intersect
+  select n_ecurie, n_sponsor from ral_engagement_ecurie
+);
+```
+
+→ 8 lignes
+
+### Exercice 24
+
+Les étapes 8 à 12 de 2025 avec les km et la vitesse moyenne dans la même colonne (une ligne pour chaque). Colonnes : n° d'étape, départ, arrivée, "mesure" et "valeur".
+
+```sql
+select n_etape, ville_depart, ville_arrivee, 'km' as mesure, km as valeur
+from ral_etape
+where annee = 2025
+and n_etape between 8 and 12
+union
+select n_etape, ville_depart, ville_arrivee, 'vitesse', vitesse_moy
+from ral_etape
+where annee = 2025
+and n_etape between 8 and 12
+order by 1, 4;
+```
+
+→ 10 lignes
 
 ## 4. Vues
 
-### Question 25
+### Exercice 25
 
-Créer la vue v_abandon_espoir : les pilotes espoirs qui ont abandonné, toutes éditions confondues (année, écurie, sponsor, pilote, n° de voiture).
-
-```sql
-CREATE OR REPLACE VIEW v_abandon_espoir AS
-SELECT e.annee, e.n_ecurie, e.n_sponsor, e.n_pilote, e.n_voiture
-FROM   ral_engagement e
-JOIN   ral_abandon a ON a.n_pilote = e.n_pilote AND a.annee = e.annee
-WHERE  e.espoir = 'o';
-```
-
-### Question 26
-
-Explorer la vue et le dictionnaire de données.
-
-a. Structure de la vue
+Une vue v_abandon_espoir avec les espoirs qui ont abandonné, toutes années confondues (année, écurie, sponsor, pilote, n° de voiture).
 
 ```sql
-DESC v_abandon_espoir;
+create or replace view v_abandon_espoir as
+select e.annee, e.n_ecurie, e.n_sponsor, e.n_pilote, e.n_voiture
+from ral_engagement e
+join ral_abandon a on a.n_pilote = e.n_pilote and a.annee = e.annee
+where e.espoir = 'o';
 ```
 
-b. Contenu trié par n° de pilote, puis par n° de colonne (4e colonne = n_pilote)
+### Exercice 26
+
+Quelques tests sur la vue et sur le dictionnaire Oracle.
+
+la structure de la vue
 
 ```sql
-SELECT * FROM v_abandon_espoir ORDER BY n_pilote;
+desc v_abandon_espoir;
 ```
 
-*Résultat : 9 lignes*
+trier par n° de pilote, puis par n° de colonne (la 4e c'est n_pilote)
 
 ```sql
-SELECT * FROM v_abandon_espoir ORDER BY 4;
+select * from v_abandon_espoir order by n_pilote;
 ```
 
-*Résultat : 9 lignes*
-
-ROWNUM est attribué avant le tri : on garde 4 lignes quelconques, puis on les trie.
+→ 9 lignes
 
 ```sql
-SELECT *
-FROM   v_abandon_espoir
-WHERE  ROWNUM < 5
-ORDER BY n_pilote;
+select * from v_abandon_espoir order by 4;
 ```
 
-*Résultat : 4 lignes*
+→ 9 lignes
 
-c. Mes vues, et tous les objets de mon schéma
+piège : rownum est donné AVANT le tri, donc je récupère 4 lignes au hasard puis je les trie
 
 ```sql
-SELECT * FROM user_views;
-SELECT DISTINCT object_type FROM user_objects;
+select *
+from v_abandon_espoir
+where rownum < 5
+order by n_pilote;
 ```
 
-d. Renommer la vue
+→ 4 lignes
+
+mes vues et les types d'objets de mon schéma
 
 ```sql
-RENAME v_abandon_espoir TO v_espoir_abandon;
-
-SELECT * FROM v_espoir_abandon;
+select * from user_views;
+select distinct object_type from user_objects;
 ```
 
-*Résultat : 9 lignes*
-
-### Question 27
-
-Avec cette vue, lister les espoirs qui ont abandonné en 2025 : nom, prénom, n° de voiture et sponsor.
+renommer la vue
 
 ```sql
-SELECT p.nom, p.prenom, v.n_voiture, s.nom AS sponsor
-FROM   v_espoir_abandon v
-JOIN   ral_pilote p  ON p.n_pilote = v.n_pilote
-JOIN   ral_sponsor s ON s.n_ecurie = v.n_ecurie AND s.n_sponsor = v.n_sponsor
-WHERE  v.annee = 2025
-ORDER BY p.nom;
+rename v_abandon_espoir to v_espoir_abandon;
+
+select * from v_espoir_abandon;
 ```
 
-*Résultat : 4 lignes*
+→ 9 lignes
 
-### Question 28
+### Exercice 27
 
-Enregistrer les requêtes 13 et 14 sous forme de vues v_q13 et v_q14.
+Avec la vue, les espoirs qui ont abandonné en 2025 : nom, prénom, n° de voiture et sponsor.
 
 ```sql
-CREATE OR REPLACE VIEW v_q13 AS
-SELECT p.nom, p.prenom, e.n_sponsor, e.n_ecurie
-FROM   ral_pilote p
-JOIN   ral_engagement e ON e.n_pilote = p.n_pilote
-WHERE  e.annee = 2025
-  AND  e.espoir = 'o';
-
-CREATE OR REPLACE VIEW v_q14 AS
-SELECT p.prenom, p.nom, a.code_abandon, t.libelle
-FROM   ral_pilote p
-JOIN   ral_engagement e      ON e.n_pilote = p.n_pilote
-LEFT JOIN ral_abandon a      ON a.n_pilote = e.n_pilote AND a.annee = e.annee
-LEFT JOIN ral_type_abandon t ON t.code_abandon = a.code_abandon
-WHERE  e.annee = 2025;
+select p.nom, p.prenom, v.n_voiture, s.nom as sponsor
+from v_espoir_abandon v
+join ral_pilote p on p.n_pilote = v.n_pilote
+join ral_sponsor s on s.n_ecurie = v.n_ecurie and s.n_sponsor = v.n_sponsor
+where v.annee = 2025
+order by p.nom;
 ```
 
-### Question 29
+→ 4 lignes
 
-Retrouver les résultats des requêtes 13 et 14 à partir de ces vues.
+### Exercice 28
+
+Je garde les requêtes 13 et 14 dans deux vues, v_q13 et v_q14.
 
 ```sql
-SELECT * FROM v_q13 ORDER BY nom;
+create or replace view v_q13 as
+select p.nom, p.prenom, e.n_sponsor, e.n_ecurie
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+where e.annee = 2025
+and e.espoir = 'o';
+
+create or replace view v_q14 as
+select p.prenom, p.nom, a.code_abandon, t.libelle
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+left join ral_abandon a on a.n_pilote = e.n_pilote and a.annee = e.annee
+left join ral_type_abandon t on t.code_abandon = a.code_abandon
+where e.annee = 2025;
 ```
 
-*Résultat : 7 lignes*
+### Exercice 29
+
+Je retrouve les résultats de la 13 et de la 14 avec les vues.
 
 ```sql
-SELECT * FROM v_q14 ORDER BY nom, prenom;
+select * from v_q13 order by nom;
 ```
 
-*Résultat : 24 lignes*
-
-### Question 30
-
-Toutes les colonnes de v_q13 plus le nom du sponsor, triées par sponsor puis par nom.
+→ 7 lignes
 
 ```sql
-SELECT v.*, s.nom AS sponsor
-FROM   v_q13 v
-JOIN   ral_sponsor s ON s.n_ecurie = v.n_ecurie AND s.n_sponsor = v.n_sponsor
-ORDER BY s.nom, v.nom;
+select * from v_q14 order by nom, prenom;
 ```
 
-*Résultat : 7 lignes*
+→ 24 lignes
+
+### Exercice 30
+
+Tout v_q13 plus le nom du sponsor, trié par sponsor puis par nom.
+
+```sql
+select v.*, s.nom as sponsor
+from v_q13 v
+join ral_sponsor s on s.n_ecurie = v.n_ecurie and s.n_sponsor = v.n_sponsor
+order by s.nom, v.nom;
+```
+
+→ 7 lignes
 
 ## 5. Sous-requêtes
 
-### Question 31
+### Exercice 31
 
-Pilotes qui ont abandonné en 2025, triés par année de naissance.
-
-```sql
-SELECT *
-FROM   ral_pilote
-WHERE  n_pilote IN (SELECT n_pilote FROM ral_abandon WHERE annee = 2025)
-ORDER BY annee_naissance;
-```
-
-*Résultat : 6 lignes*
-
-### Question 32
-
-Pilotes qui n'ont participé à aucune édition depuis 2001.
+Les pilotes qui ont abandonné en 2025, triés par année de naissance.
 
 ```sql
-SELECT *
-FROM   ral_pilote
-WHERE  n_pilote NOT IN (SELECT n_pilote FROM ral_engagement WHERE annee >= 2001)
-ORDER BY nom, prenom;
+select *
+from ral_pilote
+where n_pilote in
+(
+  select n_pilote from ral_abandon where annee = 2025
+)
+order by annee_naissance;
 ```
 
-*Résultat : 15 lignes*
+→ 6 lignes
 
-### Question 33
+### Exercice 32
 
-Nom et prénom des pilotes qui ont couru sous les couleurs de GRANIT-NRT OFFROAD.
+Les pilotes qui n'ont couru aucune édition depuis 2001.
 
 ```sql
-SELECT nom, prenom
-FROM   ral_pilote
-WHERE  n_pilote IN (
-         SELECT n_pilote
-         FROM   ral_engagement
-         WHERE  (n_ecurie, n_sponsor) IN (
-                  SELECT n_ecurie, n_sponsor
-                  FROM   ral_sponsor
-                  WHERE  nom = 'GRANIT-NRT OFFROAD'
-                )
-       )
-ORDER BY nom;
+select *
+from ral_pilote
+where n_pilote not in
+(
+  select n_pilote from ral_engagement where annee >= 2001
+)
+order by nom, prenom;
 ```
 
-*Résultat : 4 lignes*
+→ 15 lignes
 
-### Question 34
+### Exercice 33
 
-Même question avec la nationalité (code pays) de chaque pilote.
+Les pilotes qui ont couru pour GRANIT-NRT OFFROAD (nom et prénom).
 
 ```sql
-SELECT p.nom, p.prenom, n.code_pays
-FROM   ral_pilote p
-JOIN   ral_nationalite n ON n.n_pilote = p.n_pilote
-WHERE  p.n_pilote IN (
-         SELECT n_pilote
-         FROM   ral_engagement
-         WHERE  (n_ecurie, n_sponsor) IN (
-                  SELECT n_ecurie, n_sponsor
-                  FROM   ral_sponsor
-                  WHERE  nom = 'GRANIT-NRT OFFROAD'
-                )
-       )
-ORDER BY p.nom;
+select nom, prenom
+from ral_pilote
+where n_pilote in
+(
+  select n_pilote
+  from ral_engagement
+  where (n_ecurie, n_sponsor) in
+  (
+    select n_ecurie, n_sponsor
+    from ral_sponsor
+    where nom = 'GRANIT-NRT OFFROAD'
+  )
+)
+order by nom;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-### Question 35
+### Exercice 34
 
-Pilotes engagés en 2025 qui n'ont pas abandonné.
+Pareil avec leur nationalité.
 
 ```sql
-SELECT *
-FROM   ral_pilote
-WHERE  n_pilote IN     (SELECT n_pilote FROM ral_engagement WHERE annee = 2025)
-  AND  n_pilote NOT IN (SELECT n_pilote FROM ral_abandon    WHERE annee = 2025)
-ORDER BY nom;
+select p.nom, p.prenom, n.code_pays
+from ral_pilote p
+join ral_nationalite n on n.n_pilote = p.n_pilote
+where p.n_pilote in
+(
+  select n_pilote
+  from ral_engagement
+  where (n_ecurie, n_sponsor) in
+  (
+    select n_ecurie, n_sponsor
+    from ral_sponsor
+    where nom = 'GRANIT-NRT OFFROAD'
+  )
+)
+order by p.nom;
 ```
 
-*Résultat : 18 lignes*
+→ 4 lignes
 
-### Question 36
+### Exercice 35
 
-Pilotes (toutes les colonnes) qui étaient inscrits à une édition mais n'ont jamais pris le départ : un abandon est enregistré, mais aucun chrono.
+Les pilotes de 2025 qui n'ont pas abandonné.
 
 ```sql
-SELECT *
-FROM   ral_pilote
-WHERE  n_pilote IN (
-         SELECT n_pilote
-         FROM   ral_abandon
-         WHERE  (n_pilote, annee) NOT IN (SELECT n_pilote, annee FROM ral_chrono)
-       );
+select *
+from ral_pilote
+where n_pilote in (select n_pilote from ral_engagement where annee = 2025)
+and n_pilote not in (select n_pilote from ral_abandon where annee = 2025)
+order by nom;
 ```
 
-*Résultat : 1 ligne*
+→ 18 lignes
 
-### Question 37
+### Exercice 36
 
-Pilotes classés entre la 1re et la 20e place de l'étape 1 de 2025, par ordre alphabétique.
+Les pilotes inscrits qui n'ont jamais pris le départ : ils ont un abandon mais aucun chrono cette année-là.
 
 ```sql
-SELECT *
-FROM   ral_pilote
-WHERE  n_pilote IN (
-         SELECT n_pilote
-         FROM   ral_chrono
-         WHERE  annee = 2025
-           AND  n_etape = 1
-           AND  rang BETWEEN 1 AND 20
-       )
-ORDER BY nom;
+select *
+from ral_pilote
+where n_pilote in
+(
+  select n_pilote
+  from ral_abandon
+  where (n_pilote, annee) not in (select n_pilote, annee from ral_chrono)
+);
 ```
 
-*Résultat : 20 lignes*
+→ 1 ligne
 
-### Question 38
+### Exercice 37
 
-Pilotes (nom, prénom) qui ont gagné au moins une étape en 2005, avec leur sponsor.
+Les pilotes classés de la 1re à la 20e place sur l'étape 1 de 2025, par ordre alphabétique.
 
 ```sql
-SELECT p.nom, p.prenom, s.nom AS sponsor
-FROM   ral_pilote p
-JOIN   ral_engagement e ON e.n_pilote = p.n_pilote
-JOIN   ral_sponsor s    ON s.n_ecurie = e.n_ecurie AND s.n_sponsor = e.n_sponsor
-WHERE  e.annee = 2005
-  AND  p.n_pilote IN (SELECT n_pilote FROM ral_chrono WHERE annee = 2005 AND rang = 1)
-ORDER BY p.nom;
+select *
+from ral_pilote
+where n_pilote in
+(
+  select n_pilote
+  from ral_chrono
+  where annee = 2025
+  and n_etape = 1
+  and rang between 1 and 20
+)
+order by nom;
 ```
 
-*Résultat : 4 lignes*
+→ 20 lignes
 
-### Question 38bis
+### Exercice 38
 
-Uniquement le nom des sponsors concernés. On n'affiche qu'une table, donc pas de jointure : seulement des sous-requêtes.
+Les pilotes qui ont gagné au moins une étape en 2005, avec leur sponsor.
 
 ```sql
-SELECT nom
-FROM   ral_sponsor
-WHERE  (n_ecurie, n_sponsor) IN (
-         SELECT n_ecurie, n_sponsor
-         FROM   ral_engagement
-         WHERE  annee = 2005
-           AND  n_pilote IN (SELECT n_pilote FROM ral_chrono WHERE annee = 2005 AND rang = 1)
-       );
+select p.nom, p.prenom, s.nom as sponsor
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+join ral_sponsor s on s.n_ecurie = e.n_ecurie and s.n_sponsor = e.n_sponsor
+where e.annee = 2005
+and p.n_pilote in (select n_pilote from ral_chrono where annee = 2005 and rang = 1)
+order by p.nom;
 ```
 
-*Résultat : 3 lignes*
+→ 4 lignes
 
-### Question 39
+### Exercice 38bis
 
-Sponsors dont le pilote a gagné une étape partie de FES (trois sous-requêtes imbriquées).
+Seulement le nom des sponsors. Comme j'affiche une seule table, pas de jointure : que des sous-requêtes.
 
 ```sql
-SELECT *
-FROM   ral_sponsor
-WHERE  (n_ecurie, n_sponsor) IN (
-         SELECT n_ecurie, n_sponsor
-         FROM   ral_engagement
-         WHERE  (n_pilote, annee) IN (
-                  SELECT n_pilote, annee
-                  FROM   ral_chrono
-                  WHERE  rang = 1
-                    AND  (annee, n_etape, suffixe) IN (
-                           SELECT annee, n_etape, suffixe
-                           FROM   ral_etape
-                           WHERE  ville_depart = 'FES'
-                         )
-                )
-       );
+select nom
+from ral_sponsor
+where (n_ecurie, n_sponsor) in
+(
+  select n_ecurie, n_sponsor
+  from ral_engagement
+  where annee = 2005
+  and n_pilote in (select n_pilote from ral_chrono where annee = 2005 and rang = 1)
+);
 ```
 
-*Résultat : 2 lignes*
+→ 3 lignes
 
-### Question 40
+### Exercice 39
 
-Plus longue(s) étape(s) de 2025, sans fonction d'agrégat.
+Le sponsor du pilote qui a gagné une étape partie de FES, avec 3 sous-requêtes imbriquées.
 
 ```sql
-SELECT *
-FROM   ral_etape
-WHERE  annee = 2025
-  AND  km >= ALL (SELECT km FROM ral_etape WHERE annee = 2025);
+select *
+from ral_sponsor
+where (n_ecurie, n_sponsor) in
+(
+  select n_ecurie, n_sponsor
+  from ral_engagement
+  where (n_pilote, annee) in
+  (
+    select n_pilote, annee
+    from ral_chrono
+    where rang = 1
+    and (annee, n_etape, suffixe) in
+    (
+      select annee, n_etape, suffixe
+      from ral_etape
+      where ville_depart = 'FES'
+    )
+  )
+);
 ```
 
-*Résultat : 2 lignes*
+→ 2 lignes
 
-### Question 41
+### Exercice 40
 
-Étape(s) de 2025 à la vitesse moyenne la plus faible (parmi les vitesses renseignées), sans fonction d'agrégat.
+La ou les plus longues étapes de 2025, sans max().
 
 ```sql
-SELECT *
-FROM   ral_etape
-WHERE  annee = 2025
-  AND  vitesse_moy <= ALL (
-         SELECT vitesse_moy
-         FROM   ral_etape
-         WHERE  annee = 2025
-           AND  vitesse_moy IS NOT NULL
-       );
+select *
+from ral_etape
+where annee = 2025
+and km >= all (select km from ral_etape where annee = 2025);
 ```
 
-*Résultat : 1 ligne*
+→ 2 lignes
 
-Sans "vitesse_moy IS NOT NULL", la comparaison avec la valeur null vaut "inconnu" et "<= ALL" ne renvoie plus aucune ligne.
+### Exercice 41
 
-### Question 42
-
-Nombre de jours entre la première et la dernière étape de l'édition 2025.
+L'étape de 2025 avec la vitesse moyenne la plus basse (parmi celles qui sont renseignées), toujours sans fonction d'agrégat.
 
 ```sql
-SELECT (SELECT date_etape FROM ral_etape WHERE annee = 2025 AND n_etape = 21)
-     - (SELECT date_etape FROM ral_etape WHERE annee = 2025 AND n_etape = 1) AS nb_jours
-FROM   dual;
+select *
+from ral_etape
+where annee = 2025
+and vitesse_moy <= all
+(
+  select vitesse_moy
+  from ral_etape
+  where annee = 2025
+  and vitesse_moy is not null
+);
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 42bis
+Sans le "is not null", la comparaison avec la valeur null donne "inconnu" et le <= all ne renvoie plus rien du tout.
 
-Nombre de jours de course de l'édition 2025.
+### Exercice 42
+
+Le nombre de jours entre la première et la dernière étape de 2025.
 
 ```sql
-SELECT COUNT(DISTINCT date_etape) AS jours_de_course
-FROM   ral_etape
-WHERE  annee = 2025;
+select (select date_etape from ral_etape where annee = 2025 and n_etape = 21)
+     - (select date_etape from ral_etape where annee = 2025 and n_etape = 1) as nb_jours
+from dual;
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 43
+### Exercice 42bis
 
-Vainqueurs d'étape de 2017 dont la nationalité est celle du pays de départ de l'étape gagnée. Afficher les colonnes de ral_pilote. Une requête principale et trois sous-requêtes imbriquées. Pourquoi faut-il synchroniser ?
-
-Solution 1 : pilote -> nationalité -> étape -> chrono
+Le nombre de jours de course en 2025.
 
 ```sql
-SELECT *
-FROM   ral_pilote p
-WHERE  n_pilote IN (
-         SELECT n_pilote
-         FROM   ral_nationalite n
-         WHERE  2017 BETWEEN annee_debut AND NVL(annee_fin, 3000)
-           AND  code_pays IN (
-                  SELECT pays_depart
-                  FROM   ral_etape
-                  WHERE  (annee, n_etape, suffixe) IN (
-                           SELECT annee, n_etape, suffixe
-                           FROM   ral_chrono c
-                           WHERE  c.annee = 2017
-                             AND  c.rang = 1
-                             AND  c.n_pilote = n.n_pilote
-                         )
-                )
-       );
+select count(distinct date_etape) as jours_de_course
+from ral_etape
+where annee = 2025;
 ```
 
-*Résultat : 3 lignes*
+→ 1 ligne
 
-Solution 2 : pilote -> chrono -> étape -> nationalité
+### Exercice 43
+
+Les vainqueurs d'étape de 2017 qui ont la nationalité du pays d'où partait l'étape gagnée. Une requête principale + 3 sous-requêtes imbriquées. Pourquoi il faut synchroniser ?
+
+1re solution : pilote -> nationalité -> étape -> chrono
 
 ```sql
-SELECT *
-FROM   ral_pilote p
-WHERE  n_pilote IN (
-         SELECT n_pilote
-         FROM   ral_chrono c
-         WHERE  c.annee = 2017
-           AND  c.rang = 1
-           AND  (annee, n_etape, suffixe) IN (
-                  SELECT annee, n_etape, suffixe
-                  FROM   ral_etape
-                  WHERE  pays_depart IN (
-                           SELECT code_pays
-                           FROM   ral_nationalite n
-                           WHERE  n.n_pilote = c.n_pilote
-                             AND  2017 BETWEEN annee_debut AND NVL(annee_fin, 3000)
-                         )
-                )
-       );
+select *
+from ral_pilote p
+where n_pilote in
+(
+  select n_pilote
+  from ral_nationalite n
+  where 2017 between annee_debut and nvl(annee_fin, 3000)
+  and code_pays in
+  (
+    select pays_depart
+    from ral_etape
+    where (annee, n_etape, suffixe) in
+    (
+      select annee, n_etape, suffixe
+      from ral_chrono c
+      where c.annee = 2017
+      and c.rang = 1
+      and c.n_pilote = n.n_pilote
+    )
+  )
+);
 ```
 
-*Résultat : 3 lignes*
+→ 3 lignes
 
-Sans la condition "c.n_pilote = n.n_pilote", on garderait tout pilote dont le pays a vu partir une étape gagnée par n'importe qui. La synchronisation relie le vainqueur de l'étape au pilote dont on teste la nationalité.
-
-### Question 44
-
-Pilotes qui ont gagné au moins une étape en 2025, avec une requête synchronisée (EXISTS).
+2e solution : pilote -> chrono -> étape -> nationalité
 
 ```sql
-SELECT *
-FROM   ral_pilote p
-WHERE  EXISTS (
-         SELECT *
-         FROM   ral_chrono c
-         WHERE  c.n_pilote = p.n_pilote
-           AND  c.annee = 2025
-           AND  c.rang = 1
-       )
-ORDER BY nom;
+select *
+from ral_pilote p
+where n_pilote in
+(
+  select n_pilote
+  from ral_chrono c
+  where c.annee = 2017
+  and c.rang = 1
+  and (annee, n_etape, suffixe) in
+  (
+    select annee, n_etape, suffixe
+    from ral_etape
+    where pays_depart in
+    (
+      select code_pays
+      from ral_nationalite n
+      where n.n_pilote = c.n_pilote
+      and 2017 between annee_debut and nvl(annee_fin, 3000)
+    )
+  )
+);
 ```
 
-*Résultat : 13 lignes*
+→ 3 lignes
 
-### Question 45
+Sans "c.n_pilote = n.n_pilote", je garderais n'importe quel pilote dont le pays a vu partir une étape gagnée par quelqu'un d'autre. La synchro sert à vérifier que c'est bien LE vainqueur de l'étape qui a la bonne nationalité.
 
-Les 5 premiers pilotes dans l'ordre alphabétique inverse des noms.
+### Exercice 44
 
-On trie dans une sous-requête, puis on garde les 5 premières lignes.
+Les pilotes qui ont gagné au moins une étape en 2025, avec exists.
 
 ```sql
-SELECT *
-FROM   (SELECT * FROM ral_pilote ORDER BY nom DESC)
-WHERE  ROWNUM <= 5;
+select *
+from ral_pilote p
+where exists
+(
+  select *
+  from ral_chrono c
+  where c.n_pilote = p.n_pilote
+  and c.annee = 2025
+  and c.rang = 1
+)
+order by nom;
 ```
 
-*Résultat : 5 lignes*
+→ 13 lignes
+
+### Exercice 45
+
+Les 5 premiers pilotes dans l'ordre alphabétique inversé.
+
+je trie d'abord dans la sous-requête, sinon rownum prend 5 lignes au hasard
+
+```sql
+select *
+from (select * from ral_pilote order by nom desc)
+where rownum <= 5;
+```
+
+→ 5 lignes
 
 ## 6. Expressions et fonctions
 
-### Question 46
+### Exercice 46
 
-Étapes de 1988 : numéro, km et type écrit en toutes lettres (PRL = Prologue, SPE = Spéciale chronométrée, MAR = Étape marathon, LIG = Étape de liaison). Utiliser DECODE, puis CASE.
+Les étapes de 1988 avec le numéro, les km et le type écrit en entier (PRL = Prologue, SPE = Spéciale chronométrée, MAR = Étape marathon, LIG = Étape de liaison). D'abord avec decode, puis avec case.
 
 ```sql
-SELECT n_etape,
-       km,
-       DECODE(code_type, 'PRL', 'Prologue',
+select n_etape, km,
+       decode(code_type, 'PRL', 'Prologue',
                          'SPE', 'Spéciale chronométrée',
                          'MAR', 'Étape marathon',
-                         'LIG', 'Étape de liaison') AS type_etape
-FROM   ral_etape
-WHERE  annee = 1988
-ORDER BY n_etape;
+                         'LIG', 'Étape de liaison') as type_etape
+from ral_etape
+where annee = 1988
+order by n_etape;
 ```
 
-*Résultat : 6 lignes*
+→ 6 lignes
 
 ```sql
-SELECT n_etape,
-       km,
-       CASE code_type
-         WHEN 'PRL' THEN 'Prologue'
-         WHEN 'SPE' THEN 'Spéciale chronométrée'
-         WHEN 'MAR' THEN 'Étape marathon'
-         WHEN 'LIG' THEN 'Étape de liaison'
-       END AS type_etape
-FROM   ral_etape
-WHERE  annee = 1988
-ORDER BY n_etape;
+select n_etape, km,
+       case code_type
+         when 'PRL' then 'Prologue'
+         when 'SPE' then 'Spéciale chronométrée'
+         when 'MAR' then 'Étape marathon'
+         when 'LIG' then 'Étape de liaison'
+       end as type_etape
+from ral_etape
+where annee = 1988
+order by n_etape;
 ```
 
-*Résultat : 6 lignes*
+→ 6 lignes
 
-### Question 47
+### Exercice 47
 
-Prénoms contenant 'é', 'î', 'ù' ou 'ô', affichés normalement et en hexadécimal (DUMP).
+Les prénoms qui ont un é, î, ù ou ô, en texte normal et en hexadécimal (avec dump).
 
 ```sql
-SELECT prenom,
-       DUMP(prenom, 16) AS prenom_hexa
-FROM   ral_pilote
-WHERE  prenom LIKE '%é%'
-   OR  prenom LIKE '%î%'
-   OR  prenom LIKE '%ù%'
-   OR  prenom LIKE '%ô%'
-ORDER BY prenom;
+select prenom, dump(prenom, 16) as prenom_hexa
+from ral_pilote
+where prenom like '%é%'
+or prenom like '%î%'
+or prenom like '%ù%'
+or prenom like '%ô%'
+order by prenom;
 ```
 
-*Résultat : 11 lignes*
+→ 11 lignes
 
-### Question 48
+### Exercice 48
 
-Étapes courues en dehors du mois de juillet.
+Les étapes qui ne se sont pas courues en juillet.
 
 ```sql
-SELECT *
-FROM   ral_etape
-WHERE  TO_CHAR(date_etape, 'MM') <> '07';
+select *
+from ral_etape
+where to_char(date_etape, 'MM') <> '07';
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-## 7. Regroupements et fonctions d'agrégat
+## 7. Group by et fonctions d'agrégat
 
-### Question 49a
+### Exercice 49a
 
-Nombre total de pilotes dans la base.
+Combien il y a de pilotes dans la base.
 
 ```sql
-SELECT COUNT(*) AS nb_pilotes
-FROM   ral_pilote;
+select count(*) as nb_pilotes
+from ral_pilote;
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 49b
+### Exercice 49b
 
-Même résultat, mais en partant de ral_engagement.
+Le même nombre, mais en partant de ral_engagement.
 
 ```sql
-SELECT COUNT(DISTINCT n_pilote) AS nb_pilotes
-FROM   ral_engagement;
+select count(distinct n_pilote) as nb_pilotes
+from ral_engagement;
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 50
+### Exercice 50
 
-Nom et prénom du pilote qui a le nom le plus long.
+Le pilote qui a le nom le plus long.
 
 ```sql
-SELECT nom, prenom
-FROM   ral_pilote
-WHERE  LENGTH(nom) = (SELECT MAX(LENGTH(nom)) FROM ral_pilote);
+select nom, prenom
+from ral_pilote
+where length(nom) = (select max(length(nom)) from ral_pilote);
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 51
+### Exercice 51
 
-Nombre de pilotes qui ont terminé l'édition 2025.
+Combien de pilotes ont fini l'édition 2025.
 
 ```sql
-SELECT COUNT(*) AS nb_arrivees
-FROM   ral_engagement
-WHERE  annee = 2025
-  AND  n_pilote NOT IN (SELECT n_pilote FROM ral_abandon WHERE annee = 2025);
+select count(*) as nb_arrivees
+from ral_engagement
+where annee = 2025
+and n_pilote not in (select n_pilote from ral_abandon where annee = 2025);
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 52
+### Exercice 52
 
-Chrono le plus long, le plus court et chrono moyen (arrondi) de l'étape 1 de 2025.
+Le chrono le plus long, le plus court et le chrono moyen (arrondi) de l'étape 1 de 2025.
 
 ```sql
-SELECT MAX(total_secondes)          AS maxi,
-       MIN(total_secondes)          AS mini,
-       ROUND(AVG(total_secondes))   AS moyenne
-FROM   ral_chrono
-WHERE  annee = 2025
-  AND  n_etape = 1;
+select max(total_secondes) as maxi, min(total_secondes) as mini,
+       round(avg(total_secondes)) as moyenne
+from ral_chrono
+where annee = 2025
+and n_etape = 1;
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 53
+### Exercice 53
 
-Pour chaque édition : année, dernier jour, premier jour, nombre de jours entre les deux, nombre d'étapes et nombre de jours de repos.
+Pour chaque édition : l'année, le dernier jour, le premier jour, le nombre de jours entre les deux, le nombre d'étapes et les jours de repos.
 
 ```sql
-SELECT e.annee,
-       MAX(e.date_etape)                     AS dernier_jour,
-       MIN(e.date_etape)                     AS premier_jour,
-       MAX(e.date_etape) - MIN(e.date_etape) AS nb_jours,
-       COUNT(*)                              AS nb_etapes,
-       ed.jours_repos
-FROM   ral_etape e
-JOIN   ral_edition ed ON ed.annee = e.annee
-GROUP BY e.annee, ed.jours_repos
-ORDER BY e.annee;
+select e.annee, max(e.date_etape) as dernier_jour, min(e.date_etape) as premier_jour,
+       max(e.date_etape) - min(e.date_etape) as nb_jours,
+       count(*) as nb_etapes, ed.jours_repos
+from ral_etape e
+join ral_edition ed on ed.annee = e.annee
+group by e.annee, ed.jours_repos
+order by e.annee;
 ```
 
-*Résultat : 5 lignes*
+→ 5 lignes
 
-### Question 54
+### Exercice 54
 
-Le chrono le plus long et le plus court réalisés sur une étape de 2025, exprimés en heures et minutes.
+Le plus long et le plus court chrono sur une étape de 2025, en heures et minutes.
 
 ```sql
-SELECT TRUNC(MAX(total_secondes) / 3600) || ' h '
-       || LPAD(TRUNC(MOD(MAX(total_secondes), 3600) / 60), 2, '0') || ' min' AS plus_long,
-       TRUNC(MIN(total_secondes) / 3600) || ' h '
-       || LPAD(TRUNC(MOD(MIN(total_secondes), 3600) / 60), 2, '0') || ' min' AS plus_court
-FROM   ral_chrono
-WHERE  annee = 2025;
+select trunc(max(total_secondes) / 3600) || ' h '
+       || lpad(trunc(mod(max(total_secondes), 3600) / 60), 2, '0') || ' min' as plus_long,
+       trunc(min(total_secondes) / 3600) || ' h '
+       || lpad(trunc(mod(min(total_secondes), 3600) / 60), 2, '0') || ' min' as plus_court
+from ral_chrono
+where annee = 2025;
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 55
+### Exercice 55
 
-Nombre de motifs d'abandon différents réellement utilisés.
+Combien de motifs d'abandon différents ont vraiment servi.
 
 ```sql
-SELECT COUNT(DISTINCT code_abandon) AS nb_motifs
-FROM   ral_abandon;
+select count(distinct code_abandon) as nb_motifs
+from ral_abandon;
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 56
+### Exercice 56
 
-Abandons de 2025 : année, n° d'étape, motif et nombre d'abandons, triés par n° d'étape.
+Les abandons de 2025 par étape et par motif, triés par étape.
 
 ```sql
-SELECT annee, n_etape, code_abandon, COUNT(*) AS nb_abandons
-FROM   ral_abandon
-WHERE  annee = 2025
-GROUP BY annee, n_etape, code_abandon
-ORDER BY n_etape;
+select annee, n_etape, code_abandon, count(*) as nb_abandons
+from ral_abandon
+where annee = 2025
+group by annee, n_etape, code_abandon
+order by n_etape;
 ```
 
-*Résultat : 6 lignes*
+→ 6 lignes
 
-### Question 57a
+### Exercice 57a
 
-Pour 2025 : chaque motif d'abandon, le nombre d'abandons pour ce motif et le nombre total d'abandons. Donner toutes les solutions.
+Pour 2025 : chaque motif, le nombre d'abandons pour ce motif et le total des abandons. Toutes les solutions possibles.
 
-Solution 1 : deux vues, puis produit cartésien entre les vues
+solution 1 : je fais deux vues puis un produit cartésien entre les deux
 
 ```sql
-CREATE OR REPLACE VIEW v_total_abandons AS
-SELECT COUNT(*) AS total_abandons
-FROM   ral_abandon
-WHERE  annee = 2025;
+create or replace view v_total_abandons as
+select count(*) as total_abandons
+from ral_abandon
+where annee = 2025;
 
-CREATE OR REPLACE VIEW v_abandons_par_motif AS
-SELECT code_abandon, COUNT(*) AS nb_par_motif
-FROM   ral_abandon
-WHERE  annee = 2025
-GROUP BY code_abandon;
+create or replace view v_abandons_par_motif as
+select code_abandon, count(*) as nb_par_motif
+from ral_abandon
+where annee = 2025
+group by code_abandon;
 
-SELECT code_abandon, nb_par_motif, total_abandons
-FROM   v_abandons_par_motif, v_total_abandons
-ORDER BY code_abandon;
+select code_abandon, nb_par_motif, total_abandons
+from v_abandons_par_motif, v_total_abandons
+order by code_abandon;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-Solution 2 : la requête de la vue v_abandons_par_motif écrite directement
+solution 2 : je remplace la vue v_abandons_par_motif par sa requête
 
 ```sql
-SELECT code_abandon, COUNT(*) AS nb_par_motif, total_abandons
-FROM   ral_abandon, v_total_abandons
-WHERE  annee = 2025
-GROUP BY code_abandon, total_abandons
-ORDER BY code_abandon;
+select code_abandon, count(*) as nb_par_motif, total_abandons
+from ral_abandon, v_total_abandons
+where annee = 2025
+group by code_abandon, total_abandons
+order by code_abandon;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-Solution 3 : sous-requête dans le FROM à la place de v_total_abandons
+solution 3 : la vue v_total_abandons remplacée par une sous-requête dans le from
 
 ```sql
-SELECT code_abandon, COUNT(*) AS nb_par_motif, total_abandons
-FROM   ral_abandon,
-       (SELECT COUNT(*) AS total_abandons FROM ral_abandon WHERE annee = 2025)
-WHERE  annee = 2025
-GROUP BY code_abandon, total_abandons
-ORDER BY code_abandon;
+select code_abandon, count(*) as nb_par_motif, total_abandons
+from ral_abandon,
+     (select count(*) as total_abandons from ral_abandon where annee = 2025)
+where annee = 2025
+group by code_abandon, total_abandons
+order by code_abandon;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-Solution 4 : sous-requête dans le SELECT
+solution 4 : la sous-requête directement dans le select
 
 ```sql
-SELECT code_abandon,
-       COUNT(*) AS nb_par_motif,
-       (SELECT COUNT(*) FROM ral_abandon WHERE annee = 2025) AS total_abandons
-FROM   ral_abandon
-WHERE  annee = 2025
-GROUP BY code_abandon
-ORDER BY code_abandon;
+select code_abandon, count(*) as nb_par_motif,
+       (select count(*) from ral_abandon where annee = 2025) as total_abandons
+from ral_abandon
+where annee = 2025
+group by code_abandon
+order by code_abandon;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-Solution 5 : fonctions analytiques
+solution 5 : fonctions analytiques (over)
 
 ```sql
-SELECT DISTINCT code_abandon,
-       COUNT(*) OVER (PARTITION BY code_abandon) AS nb_par_motif,
-       COUNT(*) OVER ()                          AS total_abandons
-FROM   ral_abandon
-WHERE  annee = 2025
-ORDER BY code_abandon;
+select distinct code_abandon,
+       count(*) over (partition by code_abandon) as nb_par_motif,
+       count(*) over () as total_abandons
+from ral_abandon
+where annee = 2025
+order by code_abandon;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-Solution 6a : le total sur une dernière ligne, avec UNION
+solution 6a : le total sur une ligne à part en bas, avec union
 
 ```sql
-SELECT code_abandon, COUNT(*) AS nb
-FROM   ral_abandon
-WHERE  annee = 2025
-GROUP BY code_abandon
-UNION
-SELECT 'TOTAL', COUNT(*)
-FROM   ral_abandon
-WHERE  annee = 2025
-ORDER BY nb, code_abandon;
+select code_abandon, count(*) as nb
+from ral_abandon
+where annee = 2025
+group by code_abandon
+union
+select 'TOTAL', count(*)
+from ral_abandon
+where annee = 2025
+order by nb, code_abandon;
 ```
 
-*Résultat : 5 lignes*
+→ 5 lignes
 
-Solution 6b : le total sur une dernière ligne, avec ROLLUP
+solution 6b : pareil avec rollup
 
 ```sql
-SELECT NVL(code_abandon, 'TOTAL') AS code_abandon, COUNT(*) AS nb
-FROM   ral_abandon
-WHERE  annee = 2025
-GROUP BY ROLLUP (code_abandon);
+select nvl(code_abandon, 'TOTAL') as code_abandon, count(*) as nb
+from ral_abandon
+where annee = 2025
+group by rollup (code_abandon);
 ```
 
-*Résultat : 5 lignes*
+→ 5 lignes
 
-### Question 57b
+### Exercice 57b
 
-Reprendre une des solutions et ajouter le pourcentage de chaque motif.
+Je reprends une des solutions et j'ajoute le pourcentage de chaque motif.
 
 ```sql
-SELECT code_abandon,
-       nb_par_motif,
-       total_abandons,
-       ROUND(nb_par_motif * 100 / total_abandons, 1) AS pourcentage
-FROM   v_abandons_par_motif, v_total_abandons
-ORDER BY code_abandon;
+select code_abandon, nb_par_motif, total_abandons,
+       round(nb_par_motif * 100 / total_abandons, 1) as pourcentage
+from v_abandons_par_motif, v_total_abandons
+order by code_abandon;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-### Question 58
+### Exercice 58
 
-Pilotes qui ont participé à plus de 10 éditions, avec leur nombre de participations, du plus grand au plus petit.
+Les pilotes qui ont plus de 10 participations, du plus fidèle au moins fidèle.
 
 ```sql
-SELECT p.nom, p.prenom, COUNT(*) AS nb_participations
-FROM   ral_pilote p
-JOIN   ral_engagement e ON e.n_pilote = p.n_pilote
-GROUP BY p.n_pilote, p.nom, p.prenom
-HAVING COUNT(*) > 10
-ORDER BY nb_participations DESC;
+select p.nom, p.prenom, count(*) as nb_participations
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+group by p.n_pilote, p.nom, p.prenom
+having count(*) > 10
+order by nb_participations desc;
 ```
 
-*Résultat : 3 lignes*
+→ 3 lignes
 
-### Question 59
+### Exercice 59
 
-Pilote(s) détenant le record de victoires d'étape, avec ce nombre de victoires.
+Le ou les pilotes qui ont le record de victoires d'étape, avec ce nombre.
 
 ```sql
-SELECT p.nom, p.prenom, COUNT(*) AS nb_victoires
-FROM   ral_pilote p
-JOIN   ral_chrono c ON c.n_pilote = p.n_pilote
-WHERE  c.rang = 1
-GROUP BY p.n_pilote, p.nom, p.prenom
-HAVING COUNT(*) = (
-         SELECT MAX(COUNT(*))
-         FROM   ral_chrono
-         WHERE  rang = 1
-         GROUP BY n_pilote
-       );
+select p.nom, p.prenom, count(*) as nb_victoires
+from ral_pilote p
+join ral_chrono c on c.n_pilote = p.n_pilote
+where c.rang = 1
+group by p.n_pilote, p.nom, p.prenom
+having count(*) =
+(
+  select max(count(*))
+  from ral_chrono
+  where rang = 1
+  group by n_pilote
+);
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 60
+### Exercice 60
 
-Pilotes plus rapides que la moyenne sur l'avant-dernière étape de 2025 : un numéro de ligne (ROWNUM), toutes les colonnes de ral_pilote et le chrono, du plus rapide au plus lent.
+Les pilotes plus rapides que la moyenne sur l'avant-dernière étape de 2025 : un numéro de ligne (rownum), toutes les infos du pilote et son chrono, du plus rapide au plus lent.
 
 ```sql
-SELECT ROWNUM, r.*
-FROM   (
-         SELECT p.*, c.total_secondes
-         FROM   ral_pilote p
-         JOIN   ral_chrono c ON c.n_pilote = p.n_pilote
-         WHERE  c.annee = 2025
-           AND  c.n_etape = (SELECT MAX(n_etape) - 1 FROM ral_etape WHERE annee = 2025)
-           AND  c.total_secondes < (
-                  SELECT AVG(total_secondes)
-                  FROM   ral_chrono
-                  WHERE  annee = 2025
-                    AND  n_etape = (SELECT MAX(n_etape) - 1 FROM ral_etape WHERE annee = 2025)
-                )
-         ORDER BY c.total_secondes
-       ) r;
+select rownum, r.*
+from
+(
+  select p.*, c.total_secondes
+  from ral_pilote p
+  join ral_chrono c on c.n_pilote = p.n_pilote
+  where c.annee = 2025
+  and c.n_etape = (select max(n_etape) - 1 from ral_etape where annee = 2025)
+  and c.total_secondes <
+  (
+    select avg(total_secondes)
+    from ral_chrono
+    where annee = 2025
+    and n_etape = (select max(n_etape) - 1 from ral_etape where annee = 2025)
+  )
+  order by c.total_secondes
+) r;
 ```
 
-*Résultat : 9 lignes*
+→ 9 lignes
 
-ROWNUM est dans la requête externe : il numérote des lignes déjà triées.
+Je mets le rownum dans la requête du dessus pour qu'il numérote des lignes déjà triées.
 
-### Question 61a
+### Exercice 61a
 
-Pour l'édition 1998 : chaque sponsor engagé (écurie, sponsor, nom) et son nombre de pilotes au départ. En faire la vue v61_depart.
+Pour 1998 : chaque sponsor engagé (écurie, sponsor, nom) et combien de pilotes il avait au départ. Je le mets dans une vue v61_depart.
 
 ```sql
-CREATE OR REPLACE VIEW v61_depart AS
-SELECT s.n_ecurie, s.n_sponsor, s.nom, COUNT(*) AS nb_depart
-FROM   ral_engagement e
-JOIN   ral_sponsor s ON s.n_ecurie = e.n_ecurie AND s.n_sponsor = e.n_sponsor
-WHERE  e.annee = 1998
-GROUP BY s.n_ecurie, s.n_sponsor, s.nom;
+create or replace view v61_depart as
+select s.n_ecurie, s.n_sponsor, s.nom, count(*) as nb_depart
+from ral_engagement e
+join ral_sponsor s on s.n_ecurie = e.n_ecurie and s.n_sponsor = e.n_sponsor
+where e.annee = 1998
+group by s.n_ecurie, s.n_sponsor, s.nom;
 
-SELECT * FROM v61_depart;
+select * from v61_depart;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-### Question 61b
+### Exercice 61b
 
-Même chose pour les pilotes arrivés au bout : vue v61_arrivee.
+Pareil pour ceux qui sont arrivés au bout : vue v61_arrivee.
 
 ```sql
-CREATE OR REPLACE VIEW v61_arrivee AS
-SELECT s.n_ecurie, s.n_sponsor, s.nom, COUNT(*) AS nb_arrivee
-FROM   ral_engagement e
-JOIN   ral_sponsor s ON s.n_ecurie = e.n_ecurie AND s.n_sponsor = e.n_sponsor
-WHERE  e.annee = 1998
-  AND  e.n_pilote NOT IN (SELECT n_pilote FROM ral_abandon WHERE annee = 1998)
-GROUP BY s.n_ecurie, s.n_sponsor, s.nom;
+create or replace view v61_arrivee as
+select s.n_ecurie, s.n_sponsor, s.nom, count(*) as nb_arrivee
+from ral_engagement e
+join ral_sponsor s on s.n_ecurie = e.n_ecurie and s.n_sponsor = e.n_sponsor
+where e.annee = 1998
+and e.n_pilote not in (select n_pilote from ral_abandon where annee = 1998)
+group by s.n_ecurie, s.n_sponsor, s.nom;
 
-SELECT * FROM v61_arrivee;
+select * from v61_arrivee;
 ```
 
-*Résultat : 3 lignes*
+→ 3 lignes
 
-### Question 61c
+### Exercice 61c
 
-Même chose pour les pilotes qui ont abandonné : vue v61_abandon.
+Pareil pour ceux qui ont abandonné : vue v61_abandon.
 
 ```sql
-CREATE OR REPLACE VIEW v61_abandon AS
-SELECT s.n_ecurie, s.n_sponsor, s.nom, COUNT(*) AS nb_abandon
-FROM   ral_engagement e
-JOIN   ral_sponsor s ON s.n_ecurie = e.n_ecurie AND s.n_sponsor = e.n_sponsor
-WHERE  e.annee = 1998
-  AND  e.n_pilote IN (SELECT n_pilote FROM ral_abandon WHERE annee = 1998)
-GROUP BY s.n_ecurie, s.n_sponsor, s.nom;
+create or replace view v61_abandon as
+select s.n_ecurie, s.n_sponsor, s.nom, count(*) as nb_abandon
+from ral_engagement e
+join ral_sponsor s on s.n_ecurie = e.n_ecurie and s.n_sponsor = e.n_sponsor
+where e.annee = 1998
+and e.n_pilote in (select n_pilote from ral_abandon where annee = 1998)
+group by s.n_ecurie, s.n_sponsor, s.nom;
 
-SELECT * FROM v61_abandon;
+select * from v61_abandon;
 ```
 
-*Résultat : 2 lignes*
+→ 2 lignes
 
-### Question 61d
+### Exercice 61d
 
-Avec les trois vues : une ligne par sponsor avec ses départs, ses arrivées et ses abandons.
+Avec les 3 vues : une ligne par sponsor avec les départs, les arrivées et les abandons.
 
 ```sql
-SELECT d.n_ecurie,
-       d.n_sponsor,
-       d.nom,
-       d.nb_depart,
-       NVL(ar.nb_arrivee, 0) AS nb_arrivee,
-       NVL(ab.nb_abandon, 0) AS nb_abandon
-FROM   v61_depart d
-LEFT JOIN v61_arrivee ar ON ar.n_ecurie = d.n_ecurie AND ar.n_sponsor = d.n_sponsor
-LEFT JOIN v61_abandon ab ON ab.n_ecurie = d.n_ecurie AND ab.n_sponsor = d.n_sponsor
-ORDER BY d.nom;
+select d.n_ecurie, d.n_sponsor, d.nom, d.nb_depart,
+       nvl(ar.nb_arrivee, 0) as nb_arrivee,
+       nvl(ab.nb_abandon, 0) as nb_abandon
+from v61_depart d
+left join v61_arrivee ar on ar.n_ecurie = d.n_ecurie and ar.n_sponsor = d.n_sponsor
+left join v61_abandon ab on ab.n_ecurie = d.n_ecurie and ab.n_sponsor = d.n_sponsor
+order by d.nom;
 ```
 
-*Résultat : 4 lignes*
+→ 4 lignes
 
-Jointures externes : un sponsor peut n'avoir aucune arrivée, ou aucun abandon.
+left join parce qu'un sponsor peut n'avoir aucune arrivée (ou aucun abandon), et nvl pour afficher 0 au lieu de rien.
 
-### Question 61e
+### Exercice 61e
 
-Même information présentée verticalement : une ligne par sponsor et par catégorie (départ, arrivée, abandon).
+Les mêmes chiffres mais à la verticale : une ligne par sponsor et par catégorie (départ, arrivée, abandon).
 
 ```sql
-SELECT nom, 'départ'  AS categorie, nb_depart  AS nombre FROM v61_depart
-UNION
-SELECT nom, 'arrivée',              nb_arrivee           FROM v61_arrivee
-UNION
-SELECT nom, 'abandon',              nb_abandon           FROM v61_abandon
-ORDER BY 1, 2 DESC;
+select nom, 'départ' as categorie, nb_depart as nombre from v61_depart
+union
+select nom, 'arrivée', nb_arrivee from v61_arrivee
+union
+select nom, 'abandon', nb_abandon from v61_abandon
+order by 1, 2 desc;
 ```
 
-*Résultat : 9 lignes*
+→ 9 lignes
 
-### Question 61f
+### Exercice 61f
 
 Le ou les sponsors qui avaient le plus de pilotes à l'arrivée en 1998.
 
 ```sql
-SELECT *
-FROM   v61_arrivee
-WHERE  nb_arrivee = (SELECT MAX(nb_arrivee) FROM v61_arrivee);
+select *
+from v61_arrivee
+where nb_arrivee = (select max(nb_arrivee) from v61_arrivee);
 ```
 
-*Résultat : 1 ligne*
+→ 1 ligne
 
-### Question 62a
+### Exercice 62a
 
-Pilotes de 2025 qui n'ont pas abandonné : n° de pilote, nom, prénom, total de leurs chronos (en secondes) et pénalité éventuelle (ral_penalite). Trier par total.
+Les pilotes de 2025 qui n'ont pas abandonné : n°, nom, prénom, total de leurs chronos en secondes et leur pénalité s'ils en ont une. Trié par total.
 
 ```sql
-SELECT p.n_pilote,
-       p.nom,
+select p.n_pilote, p.nom, p.prenom, sum(c.total_secondes) as total_secondes,
+       pe.secondes as penalite
+from ral_pilote p
+join ral_chrono c on c.n_pilote = p.n_pilote
+left join ral_penalite pe on pe.n_pilote = c.n_pilote and pe.annee = c.annee
+where c.annee = 2025
+and p.n_pilote not in (select n_pilote from ral_abandon where annee = 2025)
+group by p.n_pilote, p.nom, p.prenom, pe.secondes
+order by 4;
+```
+
+→ 18 lignes
+
+### Exercice 62b
+
+Le classement final de 2005 (sans les abandons) : n°, nom, prénom et le "temps final" = total des chronos + pénalité.
+
+```sql
+select p.n_pilote, p.nom, p.prenom,
+       sum(c.total_secondes) + nvl(pe.secondes, 0) as "temps final"
+from ral_pilote p
+join ral_chrono c on c.n_pilote = p.n_pilote
+left join ral_penalite pe on pe.n_pilote = c.n_pilote and pe.annee = c.annee
+where c.annee = 2005
+and p.n_pilote not in (select n_pilote from ral_abandon where annee = 2005)
+group by p.n_pilote, p.nom, p.prenom, pe.secondes
+order by 4;
+```
+
+→ 12 lignes
+
+en bonus : je cache les pilotes disqualifiés après coup (valide = 'N') avec des tirets
+
+```sql
+select decode(e.valide, 'N', '------', to_char(p.n_pilote)) as n_pilote,
+       decode(e.valide, 'N', substr(p.nom, 1, 2) || '----', p.nom) as nom,
        p.prenom,
-       SUM(c.total_secondes) AS total_secondes,
-       pe.secondes           AS penalite
-FROM   ral_pilote p
-JOIN   ral_chrono c        ON c.n_pilote = p.n_pilote
-LEFT JOIN ral_penalite pe  ON pe.n_pilote = c.n_pilote AND pe.annee = c.annee
-WHERE  c.annee = 2025
-  AND  p.n_pilote NOT IN (SELECT n_pilote FROM ral_abandon WHERE annee = 2025)
-GROUP BY p.n_pilote, p.nom, p.prenom, pe.secondes
-ORDER BY 4;
+       sum(c.total_secondes) + nvl(pe.secondes, 0) as "temps final"
+from ral_pilote p
+join ral_engagement e on e.n_pilote = p.n_pilote
+join ral_chrono c on c.n_pilote = e.n_pilote and c.annee = e.annee
+left join ral_penalite pe on pe.n_pilote = c.n_pilote and pe.annee = c.annee
+where e.annee = 2005
+and p.n_pilote not in (select n_pilote from ral_abandon where annee = 2005)
+group by e.valide, p.n_pilote, p.nom, p.prenom, pe.secondes
+order by 4;
 ```
 
-*Résultat : 18 lignes*
+→ 12 lignes
 
-### Question 62b
+## 8. Pour aller plus loin
 
-Classement final de 2005 (pilotes n'ayant pas abandonné) : n° de pilote, nom, prénom et "temps final" = total des chronos + pénalité.
+### Exercice 63
+
+Le sponsor actuel de chaque écurie qui existe encore.
 
 ```sql
-SELECT p.n_pilote,
-       p.nom,
-       p.prenom,
-       SUM(c.total_secondes) + NVL(pe.secondes, 0) AS "temps final"
-FROM   ral_pilote p
-JOIN   ral_chrono c        ON c.n_pilote = p.n_pilote
-LEFT JOIN ral_penalite pe  ON pe.n_pilote = c.n_pilote AND pe.annee = c.annee
-WHERE  c.annee = 2005
-  AND  p.n_pilote NOT IN (SELECT n_pilote FROM ral_abandon WHERE annee = 2005)
-GROUP BY p.n_pilote, p.nom, p.prenom, pe.secondes
-ORDER BY 4;
+select *
+from ral_sponsor
+where (n_ecurie, n_sponsor) in (select n_ecurie, max(n_sponsor) from ral_sponsor group by n_ecurie)
+and n_ecurie in (select n_ecurie from ral_ecurie where annee_disparition is null)
+order by n_ecurie;
 ```
 
-*Résultat : 12 lignes*
+→ 22 lignes
 
-Variante : les pilotes disqualifiés après coup (valide = 'N') sont masqués par des tirets.
+### Exercice 64
+
+Pour les écuries qui ont eu plus de 6 sponsors : les infos du dernier sponsor et le nombre de noms qu'elles ont portés. (max et count c'est pas pareil !)
+
+je passe par une vue avec le nombre de sponsors et le dernier de chaque écurie
 
 ```sql
-SELECT DECODE(e.valide, 'N', '------', TO_CHAR(p.n_pilote))            AS n_pilote,
-       DECODE(e.valide, 'N', SUBSTR(p.nom, 1, 2) || '----', p.nom)      AS nom,
-       p.prenom,
-       SUM(c.total_secondes) + NVL(pe.secondes, 0)                       AS "temps final"
-FROM   ral_pilote p
-JOIN   ral_engagement e    ON e.n_pilote = p.n_pilote
-JOIN   ral_chrono c        ON c.n_pilote = e.n_pilote AND c.annee = e.annee
-LEFT JOIN ral_penalite pe  ON pe.n_pilote = c.n_pilote AND pe.annee = c.annee
-WHERE  e.annee = 2005
-  AND  p.n_pilote NOT IN (SELECT n_pilote FROM ral_abandon WHERE annee = 2005)
-GROUP BY e.valide, p.n_pilote, p.nom, p.prenom, pe.secondes
-ORDER BY 4;
+create or replace view v_nb_sponsors as
+select n_ecurie, count(*) as nb_sponsors, max(n_sponsor) as dernier_sponsor
+from ral_sponsor
+group by n_ecurie;
+
+select s.*, v.nb_sponsors
+from ral_sponsor s
+join v_nb_sponsors v on v.n_ecurie = s.n_ecurie and v.dernier_sponsor = s.n_sponsor
+where v.nb_sponsors > 6;
 ```
 
-*Résultat : 12 lignes*
+→ 1 ligne
 
-## 8. Requêtes avancées
+### Exercice 65
 
-### Question 63
-
-Sponsor actuel de chaque écurie encore en activité.
+Le premier et le dernier sponsor de chaque écurie encore active.
 
 ```sql
-SELECT *
-FROM   ral_sponsor
-WHERE  (n_ecurie, n_sponsor) IN (SELECT n_ecurie, MAX(n_sponsor) FROM ral_sponsor GROUP BY n_ecurie)
-  AND  n_ecurie IN (SELECT n_ecurie FROM ral_ecurie WHERE annee_disparition IS NULL)
-ORDER BY n_ecurie;
+select ec.n_ecurie, pr.nom as premier_sponsor, pr.annee_sponsor as depuis,
+       de.nom as dernier_sponsor, de.annee_sponsor as depuis_dernier
+from ral_ecurie ec
+join ral_sponsor pr on pr.n_ecurie = ec.n_ecurie
+join ral_sponsor de on de.n_ecurie = ec.n_ecurie
+where ec.annee_disparition is null
+and pr.n_sponsor = (select min(n_sponsor) from ral_sponsor where n_ecurie = ec.n_ecurie)
+and de.n_sponsor = (select max(n_sponsor) from ral_sponsor where n_ecurie = ec.n_ecurie)
+order by ec.n_ecurie;
 ```
 
-*Résultat : 22 lignes*
+→ 22 lignes
 
-### Question 64
+### Exercice 66
 
-Pour les écuries qui ont connu plus de 6 sponsors : les informations du dernier sponsor et le nombre de noms portés. (Attention : MAX n'est pas COUNT.)
+L'arbre des écuries qui ont pris la suite de l'écurie 14 (requête hiérarchique).
 
 ```sql
-CREATE OR REPLACE VIEW v_nb_sponsors AS
-SELECT n_ecurie,
-       COUNT(*)       AS nb_sponsors,
-       MAX(n_sponsor) AS dernier_sponsor
-FROM   ral_sponsor
-GROUP BY n_ecurie;
-
-SELECT s.*, v.nb_sponsors
-FROM   ral_sponsor s
-JOIN   v_nb_sponsors v ON v.n_ecurie = s.n_ecurie AND v.dernier_sponsor = s.n_sponsor
-WHERE  v.nb_sponsors > 6;
+select level, lpad(' ', 4 * (level - 1)) || n_ecurie_successeur as arborescence,
+       n_ecurie as predecesseur
+from ral_ecurie_succede
+start with n_ecurie = 14
+connect by prior n_ecurie_successeur = n_ecurie;
 ```
 
-*Résultat : 1 ligne*
+→ 4 lignes
 
-### Question 65
+### Exercice 67
 
-Premier et dernier sponsor de chaque écurie encore en activité.
+Ici c'est l'inverse : on a la requête et il faut retrouver la question.
+
+### Exercice 67a
+
+Ma réponse : pour l'édition 2025, combien de pilotes représentaient chaque pays, en comptant aussi les pays qui n'avaient personne (0) ? Classé du plus grand nombre au plus petit.
 
 ```sql
-SELECT ec.n_ecurie,
-       pr.nom           AS premier_sponsor,
-       pr.annee_sponsor AS depuis,
-       de.nom           AS dernier_sponsor,
-       de.annee_sponsor AS depuis_dernier
-FROM   ral_ecurie ec
-JOIN   ral_sponsor pr ON pr.n_ecurie = ec.n_ecurie
-JOIN   ral_sponsor de ON de.n_ecurie = ec.n_ecurie
-WHERE  ec.annee_disparition IS NULL
-  AND  pr.n_sponsor = (SELECT MIN(n_sponsor) FROM ral_sponsor WHERE n_ecurie = ec.n_ecurie)
-  AND  de.n_sponsor = (SELECT MAX(n_sponsor) FROM ral_sponsor WHERE n_ecurie = ec.n_ecurie)
-ORDER BY ec.n_ecurie;
+select pa.code_pays, count(*) as nb
+from ral_pays pa
+join ral_nationalite n on n.code_pays = pa.code_pays
+join ral_engagement e on e.n_pilote = n.n_pilote
+where e.annee = 2025
+and e.annee between n.annee_debut and nvl(n.annee_fin, 3000)
+group by pa.code_pays
+union
+select code_pays, 0
+from ral_pays
+where code_pays not in
+(
+  select n.code_pays
+  from ral_nationalite n
+  join ral_engagement e on e.n_pilote = n.n_pilote
+  where e.annee = 2025
+  and e.annee between n.annee_debut and nvl(n.annee_fin, 3000)
+)
+order by nb desc;
 ```
 
-*Résultat : 22 lignes*
+→ 21 lignes
 
-### Question 66
+### Exercice 67b
 
-Arbre des écuries qui ont succédé à l'écurie 14 (requête hiérarchique).
+Ma réponse : pour chaque édition, combien de pilotes y faisaient leur tout premier rallye ? De la plus récente à la plus ancienne.
 
 ```sql
-SELECT LEVEL,
-       LPAD(' ', 4 * (LEVEL - 1)) || n_ecurie_successeur AS arborescence,
-       n_ecurie                                          AS predecesseur
-FROM   ral_ecurie_succede
-START WITH n_ecurie = 14
-CONNECT BY PRIOR n_ecurie_successeur = n_ecurie;
+select annee, count(*) as nb
+from ral_engagement
+join ral_pilote using (n_pilote)
+where annee_debut = annee
+group by annee
+order by annee desc;
 ```
 
-*Résultat : 4 lignes*
-
-### Question 67
-
-Retrouver la question à partir de la requête.
-
-### Question 67a
-
-Question : pour l'édition 2025, combien de pilotes représentaient chaque pays, y compris les pays sans aucun pilote (0) ? Du plus grand nombre au plus petit.
-
-```sql
-SELECT pa.code_pays, COUNT(*) AS nb
-FROM   ral_pays pa
-JOIN   ral_nationalite n  ON n.code_pays = pa.code_pays
-JOIN   ral_engagement e   ON e.n_pilote = n.n_pilote
-WHERE  e.annee = 2025
-  AND  e.annee BETWEEN n.annee_debut AND NVL(n.annee_fin, 3000)
-GROUP BY pa.code_pays
-UNION
-SELECT code_pays, 0
-FROM   ral_pays
-WHERE  code_pays NOT IN (
-         SELECT n.code_pays
-         FROM   ral_nationalite n
-         JOIN   ral_engagement e ON e.n_pilote = n.n_pilote
-         WHERE  e.annee = 2025
-           AND  e.annee BETWEEN n.annee_debut AND NVL(n.annee_fin, 3000)
-       )
-ORDER BY nb DESC;
-```
-
-*Résultat : 21 lignes*
-
-### Question 67b
-
-Question : pour chaque édition, combien de pilotes y faisaient leurs débuts ? De la plus récente à la plus ancienne.
-
-```sql
-SELECT annee, COUNT(*) AS nb
-FROM   ral_engagement
-JOIN   ral_pilote USING (n_pilote)
-WHERE  annee_debut = annee
-GROUP BY annee
-ORDER BY annee DESC;
-```
-
-*Résultat : 13 lignes*
+→ 13 lignes

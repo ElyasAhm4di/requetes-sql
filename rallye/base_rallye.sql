@@ -1,5 +1,5 @@
 -- ----------------------------------------------------------------------------
--- Base RALLYE : le Rallye des Sables, un rallye-raid imaginaire (données fictives)
+-- Base du Rallye des Sables : un rallye-raid inventé, toutes les données sont fictives
 -- ----------------------------------------------------------------------------
 
 DROP TABLE RAL_CLASSEMENT_MONDIAL CASCADE CONSTRAINTS;
