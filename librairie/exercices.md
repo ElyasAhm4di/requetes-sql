@@ -145,7 +145,7 @@ order by cl_numero;
 
 → 8 lignes
 
-avec la jointure il faut un distinct, sinon un client sort autant de fois qu'il a de commandes
+Avec la jointure il faut un distinct, sinon un client sort autant de fois qu'il a de commandes
 
 ```sql
 select distinct c.*
@@ -319,7 +319,7 @@ select * from v_livre_editeur1 order by li_numero;
 
 → 20 lignes
 
-pour voir quelles colonnes sont modifiables dans chaque vue
+Pour voir quelles colonnes sont modifiables dans chaque vue
 
 ```sql
 select table_name, column_name, updatable, insertable, deletable
@@ -584,7 +584,7 @@ from lib_livre;
 
 → 1 ligne
 
-count(*) compte toutes les lignes, alors que count(colonne) saute les null.
+Count(*) compte toutes les lignes, alors que count(colonne) saute les null.
 
 ### Exercice 36
 
@@ -600,7 +600,7 @@ order by nb_commandes desc, c.cl_numero;
 
 → 10 lignes
 
-count(co.co_numero) et pas count(*) : sinon un client sans commande compte pour 1.
+Count(co.co_numero) et pas count(*) : sinon un client sans commande compte pour 1.
 
 ### Exercice 37
 
@@ -693,7 +693,7 @@ insert into lib_livre (li_numero, ed_numero, li_titre)
 values ('L22', 'E02', 'LE VENT DU LARGE');
 ```
 
-erreur attendue : ORA-00001 (violation de PK_LIB_LIVRE)
+Erreur attendue : ORA-00001 (violation de PK_LIB_LIVRE)
 
 ```sql
 insert into lib_livre (li_numero, ed_numero, li_titre, li_pages, li_genre, li_stock, li_prix_achat, li_prix_vente)
