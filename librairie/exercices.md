@@ -64,9 +64,7 @@ where li_genre is null;
 
 ### Exercice 5
 
-Pour chaque livre, la marge (prix de vente
-
-- prix d'achat) et le taux de marge en %, de la plus grosse marge à la plus petite
+Pour chaque livre, la marge (prix de vente moins prix d'achat) et le taux de marge en %, de la plus grosse marge à la plus petite.
 
 ```sql
 select li_numero, li_titre, li_prix_achat, li_prix_vente,
@@ -145,7 +143,7 @@ order by cl_numero;
 
 → 8 lignes
 
-Avec la jointure il faut un distinct, sinon un client sort autant de fois qu'il a de commandes
+Avec la jointure, il faut un distinct : sinon un client sort autant de fois qu'il a de commandes.
 
 ```sql
 select distinct c.*
@@ -319,7 +317,7 @@ select * from v_livre_editeur1 order by li_numero;
 
 → 20 lignes
 
-Pour voir quelles colonnes sont modifiables dans chaque vue
+Pour voir quelles colonnes sont modifiables dans chaque vue :
 
 ```sql
 select table_name, column_name, updatable, insertable, deletable
@@ -693,7 +691,7 @@ insert into lib_livre (li_numero, ed_numero, li_titre)
 values ('L22', 'E02', 'LE VENT DU LARGE');
 ```
 
-Erreur attendue : ORA-00001 (violation de PK_LIB_LIVRE)
+Je relance ensuite le premier insert : il plante avec ORA-00001 (violation de PK_LIB_LIVRE).
 
 ```sql
 insert into lib_livre (li_numero, ed_numero, li_titre, li_pages, li_genre, li_stock, li_prix_achat, li_prix_vente)
