@@ -59,7 +59,7 @@ order by n_etape;
 
 → 15 lignes
 
-Avec not between
+Avec not between :
 
 ```sql
 select n_etape, ville_depart, ville_arrivee, km
@@ -173,7 +173,7 @@ where code_pays in ('SUI', 'JPN', 'POL');
 
 Les pilotes engagés en 2025 : nom, prénom, n° de voiture, n° d'écurie et n° de pilote. J'écris la jointure de 3 manières.
 
-1re manière : l'ancienne écriture, la jointure dans le where
+1re manière : l'ancienne écriture, la jointure dans le where.
 
 ```sql
 select p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote
@@ -185,7 +185,7 @@ order by e.n_voiture;
 
 → 24 lignes
 
-2e manière : join ... on
+2e manière : join ... on.
 
 ```sql
 select p.nom, p.prenom, e.n_voiture, e.n_ecurie, p.n_pilote
@@ -452,7 +452,7 @@ select n_pilote from ral_abandon where annee = 2025;
 
 Les pilotes qui ont participé à toutes les éditions depuis 2016 (les 10 dernières).
 
-Version avec les ensembles : je prends tous les pilotes et j'enlève ceux à qui il manque au moins une année
+Version avec les ensembles : je prends tous les pilotes et j'enlève ceux à qui il manque au moins une année.
 
 ```sql
 select n_pilote
@@ -490,7 +490,7 @@ having count(*) = (select count(*) from ral_edition where annee > 2015);
 
 Les écuries (n° écurie + n° sponsor) qui sont dans le top 10 mondial mais qui n'ont jamais couru le rallye, et celles classées après la 20e place qui l'ont couru.
 
-Je fais les deux morceaux séparément puis je les colle avec un union
+Je fais les deux morceaux séparément puis je les colle avec un union.
 
 ```sql
 (
@@ -545,7 +545,7 @@ where e.espoir = 'o';
 
 Quelques tests sur la vue et sur le dictionnaire Oracle.
 
-La structure de la vue
+La structure de la vue :
 
 ```sql
 desc v_abandon_espoir;
@@ -565,7 +565,7 @@ select * from v_abandon_espoir order by 4;
 
 → 9 lignes
 
-Piège : rownum est donné AVANT le tri, donc je récupère 4 lignes au hasard puis je les trie
+Piège : rownum est donné AVANT le tri, donc je récupère 4 lignes au hasard puis je les trie.
 
 ```sql
 select *
@@ -576,14 +576,14 @@ order by n_pilote;
 
 → 4 lignes
 
-Mes vues et les types d'objets de mon schéma
+Mes vues et les types d'objets de mon schéma :
 
 ```sql
 select * from user_views;
 select distinct object_type from user_objects;
 ```
 
-Renommer la vue
+Renommer la vue :
 
 ```sql
 rename v_abandon_espoir to v_espoir_abandon;
@@ -914,7 +914,7 @@ where annee = 2025;
 
 Les vainqueurs d'étape de 2017 qui ont la nationalité du pays d'où partait l'étape gagnée. Une requête principale + 3 sous-requêtes imbriquées. Pourquoi il faut synchroniser ?
 
-1re solution : pilote -> nationalité -> étape -> chrono
+1re solution : pilote -> nationalité -> étape -> chrono.
 
 ```sql
 select *
@@ -942,7 +942,7 @@ where n_pilote in
 
 → 3 lignes
 
-2e solution : pilote -> chrono -> étape -> nationalité
+2e solution : pilote -> chrono -> étape -> nationalité.
 
 ```sql
 select *
@@ -996,7 +996,7 @@ order by nom;
 
 Les 5 premiers pilotes dans l'ordre alphabétique inversé.
 
-Je trie d'abord dans la sous-requête, sinon rownum prend 5 lignes au hasard
+Je trie d'abord dans la sous-requête, sinon rownum prend 5 lignes au hasard.
 
 ```sql
 select *
@@ -1191,7 +1191,7 @@ order by n_etape;
 
 Pour 2025 : chaque motif, le nombre d'abandons pour ce motif et le total des abandons. Toutes les solutions possibles.
 
-Solution 1 : je fais deux vues puis un produit cartésien entre les deux
+Solution 1 : je fais deux vues puis un produit cartésien entre les deux.
 
 ```sql
 create or replace view v_total_abandons as
@@ -1212,7 +1212,7 @@ order by code_abandon;
 
 → 4 lignes
 
-Solution 2 : je remplace la vue v_abandons_par_motif par sa requête
+Solution 2 : je remplace la vue v_abandons_par_motif par sa requête.
 
 ```sql
 select code_abandon, count(*) as nb_par_motif, total_abandons
@@ -1224,7 +1224,7 @@ order by code_abandon;
 
 → 4 lignes
 
-Solution 3 : la vue v_total_abandons remplacée par une sous-requête dans le from
+Solution 3 : la vue v_total_abandons remplacée par une sous-requête dans le from.
 
 ```sql
 select code_abandon, count(*) as nb_par_motif, total_abandons
@@ -1237,7 +1237,7 @@ order by code_abandon;
 
 → 4 lignes
 
-Solution 4 : la sous-requête directement dans le select
+Solution 4 : la sous-requête directement dans le select.
 
 ```sql
 select code_abandon, count(*) as nb_par_motif,
@@ -1263,7 +1263,7 @@ order by code_abandon;
 
 → 4 lignes
 
-Solution 6a : le total sur une ligne à part en bas, avec union
+Solution 6a : le total sur une ligne à part en bas, avec union.
 
 ```sql
 select code_abandon, count(*) as nb
@@ -1279,7 +1279,7 @@ order by nb, code_abandon;
 
 → 5 lignes
 
-Solution 6b : pareil avec rollup
+Solution 6b : pareil avec rollup.
 
 ```sql
 select nvl(code_abandon, 'TOTAL') as code_abandon, count(*) as nb
@@ -1501,7 +1501,7 @@ order by 4;
 
 → 12 lignes
 
-En bonus : je cache les pilotes disqualifiés après coup (valide = 'N') avec des tirets
+En bonus : je cache les pilotes disqualifiés après coup (valide = 'N') avec des tirets.
 
 ```sql
 select decode(e.valide, 'N', '------', to_char(p.n_pilote)) as n_pilote,
@@ -1540,7 +1540,7 @@ order by n_ecurie;
 
 Pour les écuries qui ont eu plus de 6 sponsors : les infos du dernier sponsor et le nombre de noms qu'elles ont portés. (max et count c'est pas pareil !)
 
-Je passe par une vue avec le nombre de sponsors et le dernier de chaque écurie
+Je passe par une vue avec le nombre de sponsors et le dernier de chaque écurie.
 
 ```sql
 create or replace view v_nb_sponsors as
